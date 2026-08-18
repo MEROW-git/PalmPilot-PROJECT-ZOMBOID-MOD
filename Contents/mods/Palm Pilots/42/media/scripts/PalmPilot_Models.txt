@@ -1,0 +1,43 @@
+module Base
+{
+    model PalmPilot_Hand
+    {
+        mesh = WorldItems/PalmPilot_Ground,
+        texture = WorldItems/PalmPilot_Ground_V2,
+        scale = 1.0,
+        attachment Bip01_Prop1
+        {
+            offset = 0.0 0.045 0.0,
+            rotate = 180.0 0.0 -180.0,
+        }
+        attachment Bip01_Prop2
+        {
+            offset = 0.0 0.045 0.0,
+            rotate = 180.0 0.0 -180.0,
+        }
+        attachment walkie_belt_left
+        {
+            offset = 0.0 0.075 0.0,
+            rotate = 0.0 0.0 0.0,
+            scale = 0.0,
+        }
+        attachment walkie_belt_right
+        {
+            offset = 0.0 0.075 0.0,
+            rotate = 0.0 0.0 0.0,
+            scale = 0.0,
+        }
+    }
+
+    model PalmPilot_Ground
+    {
+        mesh = WorldItems/PalmPilot_Ground,
+        texture = WorldItems/PalmPilot_Ground_V2,
+        scale = 1.0,
+        attachment world
+        {
+            offset = 0.0 0.0 0.0,
+            rotate = -90.0 0.0 0.0,
+        }
+    }
+}

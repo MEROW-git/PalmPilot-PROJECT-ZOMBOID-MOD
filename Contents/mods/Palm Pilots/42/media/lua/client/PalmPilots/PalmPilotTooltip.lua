@@ -1,0 +1,2 @@
+-- Kept as a no-op compatibility file for existing installations. PalmPilot is
+-- now a native Build 42 drainable item, so the game supplies its Remaining bar.

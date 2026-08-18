@@ -1,0 +1,22 @@
+module PalmPilots
+{
+    item PalmPilot
+    {
+        DisplayName = PalmPilot,
+        DisplayCategory = Electronics,
+        ItemType = base:drainable,
+        Weight = 0.35,
+        Icon = PalmPilot,
+        AttachmentType = Walkie,
+        DisappearOnUse = false,
+        KeepOnDeplete = true,
+        UseDelta = 0.007,
+        UseWhileEquipped = false,
+        cantBeConsolided = true,
+        StaticModel = PalmPilot_Hand,
+        primaryAnimMask = HoldingTorchRight,
+        secondaryAnimMask = HoldingHeavyTorchLeft,
+        WorldStaticModel = PalmPilot_Ground,
+        Tags = base:hasmetal;base:miscelectronic;base:usesbattery,
+    }
+}
