@@ -21,22 +21,33 @@ function S.mode(ui,context)
 end
 
 function S.sorted(ui,list,context,labelFor)
+    local mode=S.mode(ui,context)
+    local revision=ui and (ui.dataRevision or 0) or 0
+    local count=#(list or {})
+    local cache=ui and ui.sortedCache or nil
+    if cache and cache.list==list and cache.context==context and cache.mode==mode
+            and cache.revision==revision and cache.count==count then
+        return cache.rows
+    end
+
     local rows={}
     for index,entry in ipairs(list or {}) do
-        table.insert(rows,{index=index,entry=entry})
+        table.insert(rows,{index=index,entry=entry,
+            label=string.lower(tostring(labelFor(entry) or "")),
+            date=PalmPilots.Utils.gameDateKey(entry.createdGame),
+            tie=tostring(entry.id or index)})
     end
-    local mode=S.mode(ui,context)
     table.sort(rows,function(left,right)
-        local leftLabel=string.lower(tostring(labelFor(left.entry) or ""))
-        local rightLabel=string.lower(tostring(labelFor(right.entry) or ""))
-        local leftDate=PalmPilots.Utils.gameDateKey(left.entry.createdGame)
-        local rightDate=PalmPilots.Utils.gameDateKey(right.entry.createdGame)
-        if mode=="name_asc" and leftLabel~=rightLabel then return leftLabel<rightLabel end
-        if mode=="name_desc" and leftLabel~=rightLabel then return leftLabel>rightLabel end
-        if mode=="created_desc" and leftDate~=rightDate then return leftDate>rightDate end
-        if mode=="created_asc" and leftDate~=rightDate then return leftDate<rightDate end
-        return tostring(left.entry.id or left.index)<tostring(right.entry.id or right.index)
+        if mode=="name_asc" and left.label~=right.label then return left.label<right.label end
+        if mode=="name_desc" and left.label~=right.label then return left.label>right.label end
+        if mode=="created_desc" and left.date~=right.date then return left.date>right.date end
+        if mode=="created_asc" and left.date~=right.date then return left.date<right.date end
+        return left.tie<right.tie
     end)
+    if ui then
+        ui.sortedCache={list=list,context=context,mode=mode,revision=revision,
+            count=count,rows=rows}
+    end
     return rows
 end
 

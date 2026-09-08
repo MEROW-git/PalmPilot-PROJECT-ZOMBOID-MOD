@@ -1,8 +1,8 @@
 require "PalmPilots/PalmPilotMainUI"
 require "PalmPilots/PalmPilotOpenAction"
+require "PalmPilots/PalmPilotEquipAction"
 require "ISUI/ISInventoryPaneContextMenu"
 require "ISUI/ISInventoryPane"
-require "TimedActions/ISEquipWeaponAction"
 require "TimedActions/ISUnequipAction"
 require "TimedActions/ISTimedActionQueue"
 
@@ -49,12 +49,10 @@ function PalmPilots.ContextMenu.open(item,playerNum)
         equipPrimary=true -- Replace the PalmPilot already in the primary hand.
     elseif isPalmPilot(secondary) then
         equipPrimary=false -- Replace it without disturbing the other hand.
-    elseif not secondary then
-        equipPrimary=false -- PalmPilots prefer the secondary hand.
     elseif not primary then
-        equipPrimary=true -- Preserve an occupied secondary hand.
+        equipPrimary=true -- Use the right hand when it is free.
     else
-        equipPrimary=false -- Both occupied: replace the secondary hand.
+        equipPrimary=false -- Preserve the right-hand item and use the left.
     end
 
     -- A two-handed item cannot remain visually equipped while using the device.
@@ -64,7 +62,8 @@ function PalmPilots.ContextMenu.open(item,playerNum)
         ISTimedActionQueue.add(ISUnequipAction:new(player,other,50))
     end
 
-    ISTimedActionQueue.add(ISEquipWeaponAction:new(player,item,50,equipPrimary,false,false))
+    ISTimedActionQueue.add(PalmPilots.EquipAction:new(player,item,50,equipPrimary,
+        false,false))
     ISTimedActionQueue.add(PalmPilots.OpenAction:new(player,item))
 end
 

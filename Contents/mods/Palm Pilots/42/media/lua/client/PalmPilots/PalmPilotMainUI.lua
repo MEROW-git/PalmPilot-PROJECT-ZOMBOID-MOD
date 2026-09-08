@@ -22,6 +22,18 @@ require 'TimedActions/ISTimedActionQueue'
 
 MainUI.instances={}
 
+-- ISUI calls update every rendered frame. Keep only cheap state checks there;
+-- Java item writes and fallback inventory scans run at bounded intervals.
+local ITEM_RESOLVE_INTERVAL_MS=350
+local BATTERY_UPDATE_INTERVAL_MS=250
+
+local function matchesItemID(item,itemID)
+    if not item or itemID==nil then return false end
+    local current=tonumber(item:getID())
+    local wanted=tonumber(itemID)
+    return current~=nil and wanted~=nil and current==wanted
+end
+
 local function keyHandler(key)
     for _,ui in pairs(MainUI.instances) do if ui and ui:getIsVisible() then ui:handleKey(key) end end
 end
@@ -55,7 +67,10 @@ function MainUI:new(x,y,w,h,player,item,scale,data)
     o.handGraceUntil=PalmPilots.Utils.now()+2000
     o.scale=scale; o.screen="home"; o.buttons={}; o.pressed=nil; o.moving=false
     o.dead=o.data.batteryLevel<=0; o.lastNativeBatteryLevel=o.data.batteryLevel
-    o.lastBatteryTick=PalmPilots.Utils.worldTimeMs(); o.lastBatterySave=o.lastBatteryTick
+    o.lastBatteryTick=PalmPilots.Utils.worldTimeMs()
+    o.lastBatterySave=PalmPilots.Utils.now()
+    o.lastItemResolve=nil; o.nextBatteryUpdate=0
+    o.dataRevision=0; o.sortedCache=nil
     o.texture=getTexture(Config.image); o.deadTexture=getTexture(Config.deadImage); o.artMissing=not o.texture
     o.appTextures={}
     for app,path in pairs(Config.appIcons) do
@@ -77,16 +92,41 @@ function MainUI:new(x,y,w,h,player,item,scale,data)
     return o
 end
 
-function MainUI:resolveItem()
+function MainUI:invalidateDataViews()
+    self.dataRevision=(self.dataRevision or 0)+1
+    self.sortedCache=nil
+end
+
+function MainUI:resolveItem(force)
     if not self.player or not self.itemID then return nil end
-    local item=PalmPilots.Utils.findItemByID(self.player,self.itemID)
+    local now=PalmPilots.Utils.now()
+    local primary=self.player:getPrimaryHandItem()
+    local secondary=self.player:getSecondaryHandItem()
+    local item=matchesItemID(primary,self.itemID) and primary
+        or (matchesItemID(secondary,self.itemID) and secondary or nil)
+
+    -- A held item is the common path and needs no recursive inventory scan.
+    -- During the multiplayer equip grace period, scan at most a few times.
+    if not item then
+        if not force and self.lastItemResolve
+                and now-self.lastItemResolve<ITEM_RESOLVE_INTERVAL_MS then
+            return self.item
+        end
+        self.lastItemResolve=now
+        item=PalmPilots.Utils.findItemByID(self.player,self.itemID)
+    else
+        self.lastItemResolve=now
+    end
     if not item or item:getFullType()~=PalmPilots.Constants.ITEM_TYPE then return nil end
-    local data=PalmPilots.Data.get(item)
+    local wrapperChanged=item~=self.item
+    local data=wrapperChanged and PalmPilots.Data.get(item) or self.data
     if not data or data.deviceID~=self.deviceID then return nil end
-    if not PalmPilots.Utils.sameItem(item,self.item) or item~=self.item then
+    if wrapperChanged then
         self.item=item
         self.data=data
         self.lastNativeBatteryLevel=data.batteryLevel
+        self.nextBatteryUpdate=0
+        self:invalidateDataViews()
     end
     return item
 end
@@ -96,7 +136,7 @@ function MainUI:close()
     local returnItem=nil
     if self.data then
         self.data.uiPrefs.lastScreen=self.screen
-        if self.player and not self.player:isDead() and self:resolveItem() then
+        if self.player and not self.player:isDead() and self:resolveItem(true) then
             self:save()
             local hotbar=getPlayerHotbar and getPlayerHotbar(self.playerNum) or nil
             local held=PalmPilots.Utils.sameItem(self.player:getPrimaryHandItem(),self.item)
@@ -132,9 +172,13 @@ function MainUI:update()
             and (self.player:isRunning() or self.player:isSprinting()) then
         self:close(); return
     end
-    self:refreshNativeBattery()
+    local now=PalmPilots.Utils.now()
+    if now>=(self.nextBatteryUpdate or 0) then
+        self.nextBatteryUpdate=now+BATTERY_UPDATE_INTERVAL_MS
+        self:refreshNativeBattery()
+        if not self.dead and not self:updateBattery() then return end
+    end
     if self.dead then return end
-    if not self:updateBattery() then return end
     if self.screen=="snake" then PalmPilots.SnakeScreen.tick(self) end
 end
 
@@ -172,7 +216,8 @@ function MainUI:updateBattery()
         self.lastNativeBatteryLevel=PalmPilots.Data.setBatteryLevel(self.item,self.data,
             level)
     end
-    if now-(self.lastBatterySave or now)>=30000 then self.lastBatterySave=now; self:save() end
+    local saveNow=PalmPilots.Utils.now()
+    if saveNow-(self.lastBatterySave or saveNow)>=30000 then self:save() end
     if self.data.batteryLevel<=0 then
         self.dead=true; self.screen="dead"; self:save(); return false
     end
@@ -186,6 +231,8 @@ function MainUI:setScreen(screen)
 end
 
 function MainUI:save()
+    self:invalidateDataViews()
+    self.lastBatterySave=PalmPilots.Utils.now()
     self.item:getModData().PalmPilots=self.data
     self.lastNativeBatteryLevel=PalmPilots.Data.setBatteryLevel(self.item,self.data,self.data.batteryLevel)
     PalmPilots.Data.updateTooltip(self.item,self.data)

@@ -31,8 +31,8 @@ function Client.syncItem(player,item,data)
     sendClientCommand(player,PalmPilots.Constants.MODULE,N.SYNC,{itemID=item:getID(),deviceID=data.deviceID,data=data})
 end
 
-local function deviceLabel(item)
-    local data=PalmPilots.Data.get(item)
+local function deviceLabel(item,data)
+    data=data or PalmPilots.Data.get(item)
     local label="PalmPilot "..string.sub(data.deviceID,-6)
     if data.deviceName~="" then label=label.." ("..data.deviceName..")" end
     return label
@@ -48,7 +48,7 @@ local function addInventoryDevices(container,source,result,seen)
             local data=PalmPilots.Data.get(item)
             if data.beamEnabled then
                 seen[item:getID()]=true
-                table.insert(result,{item=item,name=deviceLabel(item)})
+                table.insert(result,{item=item,name=deviceLabel(item,data)})
             end
         end
         if instanceof(item,"InventoryContainer") then
@@ -75,7 +75,7 @@ function Client.scanLocalDevices(ui,force)
                     local data=PalmPilots.Data.get(item)
                     if data.beamEnabled then
                         seen[item:getID()]=true
-                        table.insert(result,{item=item,name=deviceLabel(item)})
+                        table.insert(result,{item=item,name=deviceLabel(item,data)})
                     end
                 end
             end
@@ -233,6 +233,10 @@ function Client.onServerCommand(module,command,args)
                 if open.itemID==item:getID() then
                     open.item=item
                     open.data=data
+                    open.lastNativeBatteryLevel=data.batteryLevel
+                    open.nextBatteryUpdate=0
+                    if open.invalidateDataViews then open:invalidateDataViews()
+                    else open.sortedCache=nil end
                 end
             end
             if not args.silent then PalmPilots.Dialogs.message(
