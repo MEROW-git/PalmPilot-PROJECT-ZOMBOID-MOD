@@ -73,9 +73,9 @@ PalmPilots are intentionally rare. Search places where late-1990s professionals 
 - Electronics stores and electronics crates
 - Pawnshop display cases
 - Wealthy home offices
-- Office-worker zombies
+- Half of office-worker zombies, who visibly carry the device in one hand
 
-Spawn rates follow Project Zomboid's **Other Loot** sandbox setting. Setting Other Loot to **None** prevents natural PalmPilot spawns.
+Container spawn rates follow Project Zomboid's **Other Loot** sandbox setting. Setting Other Loot to **None** prevents all natural PalmPilot spawns, including office-worker carriers.
 
 ## Battery life
 
