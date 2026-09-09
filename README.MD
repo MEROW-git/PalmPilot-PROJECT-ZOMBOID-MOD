@@ -9,7 +9,7 @@
 Bring a fully functional handheld organizer into **Project Zomboid**—plan supply runs, write survivor notes, check the date, crunch numbers, play Snake, and beam data to nearby survivors.
 
 [![Project Zomboid](https://img.shields.io/badge/PROJECT%20ZOMBOID-BUILD%2042.20%2B-9b1c1c?style=for-the-badge)](https://projectzomboid.com/)
-[![Version](https://img.shields.io/badge/VERSION-1.2.0-426b36?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/VERSION-1.2.1-426b36?style=for-the-badge)](#)
 [![Multiplayer](https://img.shields.io/badge/MULTIPLAYER-READY-315f86?style=for-the-badge)](#multiplayer--beam)
 [![Steam Workshop](https://img.shields.io/badge/STEAM-WORKSHOP-1b2838?style=for-the-badge&logo=steam&logoColor=white)](https://steamcommunity.com/sharedfiles/filedetails/?id=3776531193)
 
@@ -117,7 +117,7 @@ C:\Users\<your-name>\Zomboid\mods\Palm Pilots\
 | | |
 | :--- | :--- |
 | **Game version** | Project Zomboid Build 42.20 or newer |
-| **Mod version** | 1.2.0 |
+| **Mod version** | 1.2.1 |
 | **Modes** | Single-player and multiplayer |
 | **Dependencies** | None |
 | **Mod ID** | `PalmPilots` |

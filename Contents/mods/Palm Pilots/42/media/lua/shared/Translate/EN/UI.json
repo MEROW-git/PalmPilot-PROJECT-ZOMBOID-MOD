@@ -98,5 +98,5 @@
   "UI_PalmPilots_MPOnly": "Infrared Beam requires multiplayer.",
   "UI_PalmPilots_BeamPrivate": "The receiver has Beam disabled.",
   "UI_PalmPilots_BatteryEmpty": "The PalmPilot battery is empty.",
-  "UI_PalmPilots_OpenFailed": "The PalmPilot could not be equipped or opened. Try moving it to your main inventory and open it again."
+  "UI_PalmPilots_OpenFailed": "Opening the PalmPilot was interrupted. Stand still and try again. If this keeps happening in multiplayer, check that the server and all players have the same mod files."
 }

@@ -30,14 +30,23 @@ function OpenAction:perform()
     -- adding a UI that may itself queue work or synchronize inventory data.
     ISBaseTimedAction.perform(self)
     if not isServer() and item and PalmPilots.MainUI then
-        PalmPilots.Utils.log("Equip synchronized; opening item "..tostring(item:getID()))
+        PalmPilots.Utils.log("Open action completed for item "..tostring(item:getID()))
         PalmPilots.MainUI.open(self.character,item)
     end
 end
 
 function OpenAction:notifyFailure()
+    if self.failureNotified then return end
+    self.failureNotified=true
     if not isServer() and PalmPilots.Dialogs then
-        PalmPilots.Utils.log("Open action cancelled for item "..tostring(self.itemID))
+        local item=self:resolveItem()
+        local primary=self.character and self.character:getPrimaryHandItem()
+        local secondary=self.character and self.character:getSecondaryHandItem()
+        PalmPilots.Utils.log("Open action cancelled: item="..tostring(self.itemID)
+            .." owned="..tostring(item~=nil)
+            .." primary="..tostring(primary and primary:getID())
+            .." secondary="..tostring(secondary and secondary:getID())
+            .." multiplayer="..tostring(isClient()))
         PalmPilots.Dialogs.message(getText("UI_PalmPilots_OpenFailed"),
             self.character and self.character:getPlayerNum() or 0)
     end
@@ -63,7 +72,8 @@ function OpenAction:new(character,item)
     o.maxTime=1
     o.stopOnWalk=false
     o.stopOnRun=true
-    o.stopOnAim=true
+    -- Match vanilla equip: aiming must not cancel only the follow-up open.
+    o.stopOnAim=false
     o.useProgressBar=false
     return o
 end
