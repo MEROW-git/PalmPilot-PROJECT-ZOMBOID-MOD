@@ -2,6 +2,12 @@
 -- and Build 42 character stats; no game save or network transport is needed.
 local realMs,worldMs=0,0
 local values={boredom=50,unhappiness=30}
+local clientMode=false
+local sent={}
+function isClient() return clientMode end
+function sendClientCommand(player,module,command,args)
+    sent[#sent+1]={player=player,module=module,command=command,args=args}
+end
 local stats={}
 function stats:remove(stat,amount)
     assert(values[stat]~=nil,"unexpected character stat")
@@ -11,7 +17,8 @@ end
 PalmPilots={Utils={
     now=function() return realMs end,
     worldTimeMs=function() return worldMs end,
-}}
+    newID=function() return "session-"..tostring(realMs) end,
+},Constants={MODULE="PalmPilots"},Network={SNAKE_MOOD="SnakeMood"}}
 CharacterStat={BOREDOM="boredom",UNHAPPINESS="unhappiness"}
 UIFont={Small=1,Large=2}
 function getText(key) return key end
@@ -22,6 +29,7 @@ dofile(screenPath)
 local S=PalmPilots.SnakeScreen
 local ui={
     player={getStats=function() return stats end},
+    itemID=101,deviceID="device-101",
     data={snakeHighScore=0},
     arrowTextures={up=1,left=1,down=1,right=1},
     buttons={},
@@ -84,6 +92,31 @@ values.unhappiness=10
 S.render(ui)
 ui.buttons.UI_PalmPilots_Restart()
 advance(1000,60000) -- Restart leaves Snake stopped until Start is pressed.
+nearly(values.boredom,10)
+nearly(values.unhappiness,10)
+
+-- Multiplayer sends bounded heartbeats and leaves character stats to the server.
+clientMode=true
+S.reset(ui)
+S.render(ui)
+ui.buttons.UI_PalmPilots_Start()
+advance(220,60000)
+assert(#sent==1 and sent[1].command=="SnakeMood")
+assert(sent[1].args.itemID==101 and sent[1].args.deviceID=="device-101")
+nearly(values.boredom,10)
+nearly(values.unhappiness,10)
+advance(220,60000)
+assert(#sent==1)
+advance(1000,60000)
+assert(#sent==2 and sent[2].args.session==sent[1].args.session)
+S.render(ui)
+ui.buttons.UI_PalmPilots_Pause()
+advance(3000,60000)
+assert(#sent==2)
+S.render(ui)
+ui.buttons.UI_PalmPilots_Resume()
+advance(220,60000)
+assert(#sent==3 and sent[3].args.session~=sent[1].args.session)
 nearly(values.boredom,10)
 nearly(values.unhappiness,10)
 print("Snake mood checks passed")

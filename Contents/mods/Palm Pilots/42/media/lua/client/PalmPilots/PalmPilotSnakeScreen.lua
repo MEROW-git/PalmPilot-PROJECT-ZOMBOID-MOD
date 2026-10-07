@@ -4,6 +4,7 @@ local MOVE_INTERVAL_MS = 220
 local MAX_MOOD_ELAPSED_MS = 30000
 local BOREDOM_RELIEF_PER_HOUR = 12
 local UNHAPPINESS_RELIEF_PER_HOUR = 6
+local MOOD_PING_INTERVAL_MS = 1000
 
 local function same(a,b) return a.x==b.x and a.y==b.y end
 
@@ -27,11 +28,21 @@ end
 
 local function relieveMood(ui,elapsed)
     if elapsed<=0 or not ui.player then return end
+    if isClient() then return end
     local stats=ui.player:getStats()
     if not stats then return end
     local hours=math.min(elapsed,MAX_MOOD_ELAPSED_MS)/3600000
     stats:remove(CharacterStat.BOREDOM,BOREDOM_RELIEF_PER_HOUR*hours)
     stats:remove(CharacterStat.UNHAPPINESS,UNHAPPINESS_RELIEF_PER_HOUR*hours)
+end
+
+local function syncMoodPlay(ui,s,now)
+    if not isClient() or not s.moodSession then return end
+    if s.lastMoodPing and now-s.lastMoodPing<MOOD_PING_INTERVAL_MS then return end
+    s.lastMoodPing=now
+    sendClientCommand(ui.player,PalmPilots.Constants.MODULE,
+        PalmPilots.Network.SNAKE_MOOD,{itemID=ui.itemID,deviceID=ui.deviceID,
+            session=s.moodSession})
 end
 
 function S.tick(ui)
@@ -46,7 +57,7 @@ function S.tick(ui)
     table.insert(s.body,1,head)
     if same(head,s.food) then s.score=s.score+10; if s.score>ui.data.snakeHighScore then ui.data.snakeHighScore=s.score; ui:save() end; S.food(ui)
     else table.remove(s.body) end
-    relieveMood(ui,elapsed)
+    if isClient() then syncMoodPlay(ui,s,now) else relieveMood(ui,elapsed) end
 end
 
 function S.render(ui)
@@ -61,6 +72,10 @@ function S.render(ui)
         if s.dead then S.reset(ui); s=ui.snake end
         if not s.running then s.running=true; s.last=0; s.lastMoodWorld=PalmPilots.Utils.worldTimeMs()
         else s.paused=not s.paused; s.lastMoodWorld=PalmPilots.Utils.worldTimeMs() end
+        if s.running and not s.paused then
+            s.moodSession=PalmPilots.Utils.newID("snake")
+            s.lastMoodPing=nil
+        end
     end)
     ui:button(getText("UI_PalmPilots_Restart"),305,565,105,32,function() S.reset(ui) end)
     ui:button(getText("UI_PalmPilots_Back"),440,565,105,32,function() ui:setScreen("home") end)

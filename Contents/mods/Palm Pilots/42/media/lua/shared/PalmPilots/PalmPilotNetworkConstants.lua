@@ -2,6 +2,7 @@ require "PalmPilots/PalmPilotConstants"
 
 PalmPilots.Network = {
     SYNC = "SyncDevice",
+    SNAKE_MOOD = "SnakeMood",
     LIST_TARGETS = "ListTargets",
     TARGETS = "Targets",
     REQUEST = "BeamRequest",

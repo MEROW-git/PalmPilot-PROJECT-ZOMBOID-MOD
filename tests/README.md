@@ -19,12 +19,21 @@ Run from the repository root with Lua 5.3 or Fengari:
 
 ```powershell
 npx.cmd --yes --package fengari-node-cli fengari tests/snake_mood.lua
+npx.cmd --yes --package fengari-node-cli fengari tests/snake_mood_multiplayer.lua
 ```
 
 This loads the actual Snake screen and checks active play, game-time pause,
 pause/resume, stat minimums, collision, and a long-update cap with mocked
 Build 42 character stats. It does not replace a live single-player and
-multiplayer check before publishing.
+multiplayer check before publishing. The multiplayer harness also loads the
+real server command handler and checks device ownership, equipped hand,
+battery, session reset, elapsed-time cap, and stat sync with mocked game APIs.
+
+For release verification, start with nonzero Boredom and Unhappiness, play
+Snake for at least one in-game hour in single-player and as an ordinary
+multiplayer client, then compare both stats before and after. Pause, close the
+device, and reconnect to check that relief stops and the multiplayer change
+persists. Restart the server and client with matching mod files first.
 
 ## Equip/open regression checks
 

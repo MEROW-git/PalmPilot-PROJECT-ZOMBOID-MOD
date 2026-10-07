@@ -4,8 +4,9 @@
 
 - Active Snake play now slowly reduces Boredom and Unhappiness on Build 42.20+.
 - Relief uses elapsed game time, is capped after long update gaps, and stops when play pauses or ends.
+- Multiplayer Snake relief is now applied by the server and synced back to the player after checking the held, powered device.
 - Added a PalmPilot Spawn Rate sandbox setting for container loot and office-worker carriers. Its default preserves existing behavior; custom rates compensate for high Other Loot.
-- Device data and multiplayer command formats are unchanged.
+- Device save data is unchanged; multiplayer now uses a bounded Snake mood heartbeat.
 
 ## 1.2.1 — Multiplayer equip/open fixes
 
