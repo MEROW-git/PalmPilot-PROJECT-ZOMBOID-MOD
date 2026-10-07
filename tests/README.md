@@ -1,5 +1,18 @@
 # Regression checks
 
+## Spawn setting checks
+
+Run from the repository root with Lua 5.3 or Fengari:
+
+```powershell
+npx.cmd --yes --package fengari-node-cli fengari tests/palm_spawn_settings.lua
+```
+
+This loads the actual loot and zombie-carrier code with mocked Build 42 APIs.
+It checks the original default, each new setting, high and low Other Loot,
+the None gate, and reloads without duplicate loot entries. Check the sandbox
+menu and newly generated loot in a live game before publishing.
+
 ## Snake mood checks
 
 Run from the repository root with Lua 5.3 or Fengari:

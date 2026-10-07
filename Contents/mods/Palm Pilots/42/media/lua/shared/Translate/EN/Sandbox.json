@@ -1,0 +1,11 @@
+{
+    "Sandbox_PalmPilots": "Palm Pilots",
+    "Sandbox_PalmPilots_SpawnRate": "PalmPilot Spawn Rate",
+    "Sandbox_PalmPilots_SpawnRate_tooltip": "Controls new PalmPilot spawns in containers and on office-worker zombies. Original Behavior keeps the previous spawn rates. Other Loot set to None still prevents natural spawns.",
+    "Sandbox_PalmPilots_SpawnRate_option1": "Original Behavior",
+    "Sandbox_PalmPilots_SpawnRate_option2": "None",
+    "Sandbox_PalmPilots_SpawnRate_option3": "Very Rare",
+    "Sandbox_PalmPilots_SpawnRate_option4": "Rare",
+    "Sandbox_PalmPilots_SpawnRate_option5": "Normal",
+    "Sandbox_PalmPilots_SpawnRate_option6": "Common"
+}

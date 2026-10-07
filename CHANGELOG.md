@@ -4,6 +4,7 @@
 
 - Active Snake play now slowly reduces Boredom and Unhappiness on Build 42.20+.
 - Relief uses elapsed game time, is capped after long update gaps, and stops when play pauses or ends.
+- Added a PalmPilot Spawn Rate sandbox setting for container loot and office-worker carriers. Its default preserves existing behavior; custom rates compensate for high Other Loot.
 - Device data and multiplayer command formats are unchanged.
 
 ## 1.2.1 — Multiplayer equip/open fixes

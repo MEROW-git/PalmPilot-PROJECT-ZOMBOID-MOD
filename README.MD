@@ -73,9 +73,9 @@ PalmPilots are intentionally rare. Search places where late-1990s professionals 
 - Electronics stores and electronics crates
 - Pawnshop display cases
 - Wealthy home offices
-- Half of office-worker zombies, who visibly carry the device in one hand
+- Office-worker zombies, who visibly carry the device in one hand
 
-Container spawn rates follow Project Zomboid's **Other Loot** sandbox setting. Setting Other Loot to **None** prevents all natural PalmPilot spawns, including office-worker carriers.
+Use the **Palm Pilots → PalmPilot Spawn Rate** sandbox setting to choose None, Very Rare, Rare, Normal, or Common independently of higher **Other Loot** rates. The default, **Original Behavior**, preserves the previous spawn rates: containers follow Other Loot and half of office-worker zombies carry a PalmPilot. Very Rare gives roughly one-tenth of the Normal container rate and 5% of office-worker zombies; Rare gives roughly three-tenths and 15%. Setting Other Loot to **None** still prevents natural PalmPilot spawns. Restart the game or server after changing this setting. It affects only new loot and newly spawned zombies, not devices already in the world.
 
 ## Battery life
 

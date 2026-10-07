@@ -1,35 +1,35 @@
 require "Items/ProceduralDistributions"
 require "Items/Distributions"
+require "PalmPilots/PalmPilotSpawnSettings"
 
 PalmPilots.Loot = PalmPilots.Loot or {}
 
 local ITEM_TYPE="PalmPilots.PalmPilot"
 
--- These are vanilla loot-table weights, not percentages. Because PalmPilot is
--- classified as Other loot, Build 42 also applies the world's Sandbox
--- Other Loot setting (including None) to these spawns.
-local CONTAINER_RARE=5.00
+-- These are vanilla loot-table weights, not percentages. A custom sandbox
+-- choice compensates for Build 42's Other Loot modifier at roll time.
+local containerWeight=PalmPilots.SpawnSettings.containerWeight()
 
 local proceduralWeights={
     -- Use one clear rare weight across every appropriate container.
-    OfficeDeskSecretary=CONTAINER_RARE,
+    OfficeDeskSecretary=containerWeight,
 
     -- Electronics-store counters, cases, shelves, and storage boxes.
-    ElectronicStoreCases=CONTAINER_RARE,
-    ElectronicStoreComputers=CONTAINER_RARE,
-    ElectronicStoreMisc=CONTAINER_RARE,
-    ElectronicStorePhones=CONTAINER_RARE,
-    StoreShelfElectronics=CONTAINER_RARE,
-    CrateElectronics=CONTAINER_RARE,
+    ElectronicStoreCases=containerWeight,
+    ElectronicStoreComputers=containerWeight,
+    ElectronicStoreMisc=containerWeight,
+    ElectronicStorePhones=containerWeight,
+    StoreShelfElectronics=containerWeight,
+    CrateElectronics=containerWeight,
 
     -- Ordinary offices, pawnshops, and wealthy home offices.
-    DeskGeneric=CONTAINER_RARE,
-    OfficeDesk=CONTAINER_RARE,
-    OfficeCounter=CONTAINER_RARE,
-    FilingCabinetGeneric=CONTAINER_RARE,
-    PawnShopCases=CONTAINER_RARE,
-    OfficeDeskHome=CONTAINER_RARE,
-    OfficeDeskHomeClassy=CONTAINER_RARE,
+    DeskGeneric=containerWeight,
+    OfficeDesk=containerWeight,
+    OfficeCounter=containerWeight,
+    FilingCabinetGeneric=containerWeight,
+    PawnShopCases=containerWeight,
+    OfficeDeskHome=containerWeight,
+    OfficeDeskHomeClassy=containerWeight,
 }
 
 local function setWeight(items,weight)

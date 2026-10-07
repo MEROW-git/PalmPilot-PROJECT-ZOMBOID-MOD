@@ -1,0 +1,10 @@
+VERSION = 1,
+
+option PalmPilots.SpawnRate
+{
+    type = enum,
+    default = 1,
+    numValues = 6,
+    page = PalmPilots,
+    translation = PalmPilots_SpawnRate,
+}

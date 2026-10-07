@@ -1,10 +1,10 @@
 PalmPilots = PalmPilots or {}
 PalmPilots.ZombieCarrier = PalmPilots.ZombieCarrier or {}
+require "PalmPilots/PalmPilotSpawnSettings"
 
 local Carrier=PalmPilots.ZombieCarrier
 local ITEM_TYPE="PalmPilots.PalmPilot"
 local ATTACHED_LOCATION="PalmPilot Right Hand"
-local CARRIER_CHANCE=50
 local OFFICE_OUTFITS={
     OfficeWorker=true,
     OfficeWorkerSkirt=true,
@@ -22,14 +22,16 @@ Carrier.pending={}
 Carrier.tickHooked=false
 
 local function passesCarrierRoll(zombie)
+    local chance=PalmPilots.SpawnSettings.carrierChance()
+    if chance<=0 then return false end
     -- The low bits are the persistent outfit variant (1-500). Using them makes
-    -- the 50% decision stable across saves and multiplayer clients.
+    -- the spawn decision stable across saves and multiplayer clients.
     local outfitID=tonumber(zombie:getPersistentOutfitID()) or 0
     if outfitID~=0 then
         local variant=outfitID%65536
-        return variant%100<CARRIER_CHANCE
+        return variant%100<chance
     end
-    return ZombRand(100)<CARRIER_CHANCE
+    return ZombRand(100)<chance
 end
 
 local function giveDevice(zombie)
