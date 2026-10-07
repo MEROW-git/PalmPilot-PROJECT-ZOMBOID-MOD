@@ -1,4 +1,5 @@
 require "PalmPilots/PalmPilotUtils"
+require "PalmPilots/PalmPilotChess"
 
 PalmPilots.Data = PalmPilots.Data or {}
 local D = PalmPilots.Data
@@ -122,7 +123,7 @@ local function cleanUIPrefs(raw)
     if x then prefs.positionX=math.floor(x) end
     if y then prefs.positionY=math.floor(y) end
     local screens={home=true,todo=true,memo=true,calculator=true,calendar=true,
-        snake=true,beam=true,settings=true,find=true}
+        snake=true,chess=true,beam=true,settings=true,find=true}
     if screens[raw.lastScreen] then prefs.lastScreen=raw.lastScreen end
     local modes={name_asc=true,name_desc=true,created_desc=true,created_asc=true}
     if type(raw.sortModes)=="table" then
@@ -142,6 +143,8 @@ function D.sanitize(raw, createID)
         deviceID=tostring(raw.deviceID or (createID and U.newID("device") or "")),
         boundItemID=tostring(raw.boundItemID or ""),
         todos={}, notes={}, snakeHighScore=math.max(0, math.floor(tonumber(raw.snakeHighScore) or 0)),
+        chessFEN=PalmPilots.Chess.fromFEN(raw.chessFEN) and raw.chessFEN
+            or PalmPilots.Chess.toFEN(PalmPilots.Chess.new()),
         uiPrefs=cleanUIPrefs(raw.uiPrefs),
         deviceName=U.clampText(raw.deviceName, C.MAX_DEVICE_NAME),
         batteryLevel=cleanBatteryLevel(raw.batteryLevel),

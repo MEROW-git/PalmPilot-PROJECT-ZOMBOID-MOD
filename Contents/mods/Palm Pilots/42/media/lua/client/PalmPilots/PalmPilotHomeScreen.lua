@@ -16,7 +16,7 @@ function PalmPilots.HomeScreen.render(ui)
     -- into the handwriting area at the bottom of the LCD.
     local apps = {
         {"todo",116,200}, {"memo",239,200}, {"calculator",362,200}, {"calendar",485,200},
-        {"snake",177,395}, {"beam",300,395}, {"settings",423,395},
+        {"snake",116,395}, {"chess",239,395}, {"beam",362,395}, {"settings",485,395},
     }
     for _, app in ipairs(apps) do
         local appName=app[1]

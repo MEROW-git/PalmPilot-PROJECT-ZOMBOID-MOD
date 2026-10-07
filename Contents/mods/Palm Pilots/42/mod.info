@@ -1,6 +1,6 @@
 name=Palm Pilots
 id=PalmPilots
-description=A functional handheld PalmPilot with to-do lists, notes, calculator, Snake, and infrared data transfer.
+description=A functional handheld PalmPilot with to-do lists, notes, calculator, Snake, Chess, and infrared data transfer.
 poster=poster.png
 icon=icon.png
 versionMin=42.20.0

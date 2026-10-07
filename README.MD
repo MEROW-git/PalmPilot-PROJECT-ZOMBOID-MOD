@@ -6,7 +6,7 @@
 
 ### A pocket-sized piece of 1998 for the end of the world.
 
-Bring a fully functional handheld organizer into **Project Zomboid**—plan supply runs, write survivor notes, check the date, crunch numbers, play Snake, and beam data to nearby survivors.
+Bring a fully functional handheld organizer into **Project Zomboid**—plan supply runs, write survivor notes, check the date, crunch numbers, play Snake or Chess, and beam data to nearby survivors.
 
 [![Project Zomboid](https://img.shields.io/badge/PROJECT%20ZOMBOID-BUILD%2042.20%2B-9b1c1c?style=for-the-badge)](https://projectzomboid.com/)
 [![Version](https://img.shields.io/badge/VERSION-1.2.1-426b36?style=for-the-badge)](#)
@@ -26,11 +26,11 @@ Bring a fully functional handheld organizer into **Project Zomboid**—plan supp
 | Get organized | Useful tools | Authentic survivor tech |
 | :--- | :--- | :--- |
 | ✅ Named task lists and checklist items | 🧮 Working calculator | 🔋 Removable batteries |
-| 📝 Multi-line memos | 📅 Live in-game calendar | 🕹️ Playable Snake game |
+| 📝 Multi-line memos | 📅 Live in-game calendar | 🕹️ Playable Snake and Chess games |
 | 🔎 Find and sort saved entries | 📡 Infrared Beam transfers | 🎒 Equipped-hand 3D model |
 | 💾 Data saved per physical device | ⚙️ Nickname and privacy settings | 📦 Placeable world model |
 
-Every PalmPilot has its **own identity, battery level, nickname, settings, tasks, memos, and Snake high score**. Its data stays with the device when it is dropped, stored, traded, saved, or carried into another multiplayer session.
+Every PalmPilot has its **own identity, battery level, nickname, settings, tasks, memos, Snake high score, and Chess position**. Its data stays with the device when it is dropped, stored, traded, saved, or carried into another multiplayer session.
 
 ## Built-in applications
 
@@ -49,6 +49,10 @@ Use a functional calculator and check the current in-game date and time without 
 ### Snake
 
 The classic time-waster, now available during the apocalypse. While you actively play, Snake slowly reduces your character's Boredom and Unhappiness (the stat behind Depression). In multiplayer, the server applies and syncs this benefit. Pausing, leaving the game, or running out of battery stops it. Your high score belongs to the device, so think twice before lending it out.
+
+### Chess
+
+Play White against a compact computer opponent. Tap a piece and its destination; the game supports check and checkmate, castling, en passant, pawn promotion, stalemate, and the fifty-move draw rule. The current position is saved on each physical PalmPilot, so you can close it and continue later. This is an original in-mod game; the ChessGenius Palm OS `.prc` is not included or executed.
 
 ### Beam
 

@@ -17,6 +17,7 @@ PalmPilots.UIConfig = {
         calculator="media/ui/PalmPilot/app icon/Icon_Calc.png",
         calendar="media/ui/PalmPilot/app icon/Icon_Calender.png",
         snake="media/ui/PalmPilot/app icon/Icon_Snake.png",
+        chess="media/ui/PalmPilot/app icon/Icon_Chess.png",
         beam="media/ui/PalmPilot/app icon/Icon_Beam.png",
         settings="media/ui/PalmPilot/app icon/Icon_Setting.png",
     },

@@ -7,6 +7,7 @@ require "PalmPilots/PalmPilotMemoScreen"
 require "PalmPilots/PalmPilotCalculatorScreen"
 require "PalmPilots/PalmPilotCalendarScreen"
 require "PalmPilots/PalmPilotSnakeScreen"
+require "PalmPilots/PalmPilotChessScreen"
 require "PalmPilots/PalmPilotBeamScreen"
 require "PalmPilots/PalmPilotSettingsScreen"
 require "PalmPilots/PalmPilotFindScreen"
@@ -180,6 +181,7 @@ function MainUI:update()
     end
     if self.dead then return end
     if self.screen=="snake" then PalmPilots.SnakeScreen.tick(self) end
+    if self.screen=="chess" then PalmPilots.ChessScreen.tick(self) end
 end
 
 function MainUI:refreshNativeBattery()
@@ -396,6 +398,7 @@ function MainUI:prerender()
     if self.screen=="todo" then screen=PalmPilots.TodoScreen elseif self.screen=="memo" then screen=PalmPilots.MemoScreen
     elseif self.screen=="calculator" then screen=PalmPilots.CalculatorScreen elseif self.screen=="calendar" then screen=PalmPilots.CalendarScreen
     elseif self.screen=="snake" then screen=PalmPilots.SnakeScreen
+    elseif self.screen=="chess" then screen=PalmPilots.ChessScreen
     elseif self.screen=="beam" then screen=PalmPilots.BeamScreen
     elseif self.screen=="settings" then screen=PalmPilots.SettingsScreen end
     if self.screen=="find" then screen=PalmPilots.FindScreen end
