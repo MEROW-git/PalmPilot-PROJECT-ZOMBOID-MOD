@@ -1,4 +1,19 @@
-# Equip/open regression checks
+# Regression checks
+
+## Snake mood checks
+
+Run from the repository root with Lua 5.3 or Fengari:
+
+```powershell
+npx.cmd --yes --package fengari-node-cli fengari tests/snake_mood.lua
+```
+
+This loads the actual Snake screen and checks active play, game-time pause,
+pause/resume, stat minimums, collision, and a long-update cap with mocked
+Build 42 character stats. It does not replace a live single-player and
+multiplayer check before publishing.
+
+## Equip/open regression checks
 
 From the repository root, run with Lua 5.3 or Fengari:
 

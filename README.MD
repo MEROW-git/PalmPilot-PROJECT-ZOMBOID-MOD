@@ -48,7 +48,7 @@ Use a functional calculator and check the current in-game date and time without 
 
 ### Snake
 
-The classic time-waster, now available during the apocalypse. Your high score belongs to the device, so think twice before lending it out.
+The classic time-waster, now available during the apocalypse. While you actively play, Snake slowly reduces your character's Boredom and Unhappiness (the stat behind Depression). Pausing, leaving the game, or running out of battery stops the benefit. Your high score belongs to the device, so think twice before lending it out.
 
 ### Beam
 

@@ -1,6 +1,9 @@
 PalmPilots.SnakeScreen = PalmPilots.SnakeScreen or {}
 local S = PalmPilots.SnakeScreen
 local MOVE_INTERVAL_MS = 220
+local MAX_MOOD_ELAPSED_MS = 30000
+local BOREDOM_RELIEF_PER_HOUR = 12
+local UNHAPPINESS_RELIEF_PER_HOUR = 6
 
 local function same(a,b) return a.x==b.x and a.y==b.y end
 
@@ -22,15 +25,28 @@ function S.direction(ui,x,y)
     if s.dir.x+x~=0 or s.dir.y+y~=0 then s.nextDir={x=x,y=y} end
 end
 
+local function relieveMood(ui,elapsed)
+    if elapsed<=0 or not ui.player then return end
+    local stats=ui.player:getStats()
+    if not stats then return end
+    local hours=math.min(elapsed,MAX_MOOD_ELAPSED_MS)/3600000
+    stats:remove(CharacterStat.BOREDOM,BOREDOM_RELIEF_PER_HOUR*hours)
+    stats:remove(CharacterStat.UNHAPPINESS,UNHAPPINESS_RELIEF_PER_HOUR*hours)
+end
+
 function S.tick(ui)
     local s=ui.snake; if not s or not s.running or s.paused or s.dead then return end
     local now=PalmPilots.Utils.now(); if now-s.last<MOVE_INTERVAL_MS then return end; s.last=now; s.dir=s.nextDir
+    local worldNow=PalmPilots.Utils.worldTimeMs()
+    local elapsed=math.max(0,worldNow-(s.lastMoodWorld or worldNow))
+    s.lastMoodWorld=worldNow
     local head={x=s.body[1].x+s.dir.x,y=s.body[1].y+s.dir.y}
     if head.x<0 or head.x>=20 or head.y<0 or head.y>=16 then s.dead=true; s.running=false; return end
     for _,part in ipairs(s.body) do if same(head,part) then s.dead=true; s.running=false; return end end
     table.insert(s.body,1,head)
     if same(head,s.food) then s.score=s.score+10; if s.score>ui.data.snakeHighScore then ui.data.snakeHighScore=s.score; ui:save() end; S.food(ui)
     else table.remove(s.body) end
+    relieveMood(ui,elapsed)
 end
 
 function S.render(ui)
@@ -42,7 +58,9 @@ function S.render(ui)
     if s.food then ui:box(136+s.food.x*21.8,207+s.food.y*21.8,19,19) end
     if s.dead then ui:centerText(getText("UI_PalmPilots_GameOver"),354,370,UIFont.Large) end
     ui:button(s.running and (s.paused and getText("UI_PalmPilots_Resume") or getText("UI_PalmPilots_Pause")) or getText("UI_PalmPilots_Start"),170,565,105,32,function()
-        if s.dead then S.reset(ui); s=ui.snake end; if not s.running then s.running=true; s.last=0 else s.paused=not s.paused end
+        if s.dead then S.reset(ui); s=ui.snake end
+        if not s.running then s.running=true; s.last=0; s.lastMoodWorld=PalmPilots.Utils.worldTimeMs()
+        else s.paused=not s.paused; s.lastMoodWorld=PalmPilots.Utils.worldTimeMs() end
     end)
     ui:button(getText("UI_PalmPilots_Restart"),305,565,105,32,function() S.reset(ui) end)
     ui:button(getText("UI_PalmPilots_Back"),440,565,105,32,function() ui:setScreen("home") end)
