@@ -10,7 +10,7 @@ npx.cmd --yes --package fengari-node-cli fengari tests/chess.lua
 
 This checks opening move counts through three plies, castling, en passant,
 promotion, checkmate, saved-position round trips, a legal computer move, and
-the Chess screen's move/save/reload flow.
+the Chess screen's move/save/reload flow, title-bar status, and control bounds.
 In game, open Chess, make a move, close and reopen the same PalmPilot, and
 confirm that the position is preserved. Test with a multiplayer client as
 well, since the position is saved through normal per-device synchronization.

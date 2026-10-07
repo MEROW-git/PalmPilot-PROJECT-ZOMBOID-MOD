@@ -3,8 +3,9 @@ require "PalmPilots/PalmPilotChess"
 PalmPilots.ChessScreen = PalmPilots.ChessScreen or {}
 local S = PalmPilots.ChessScreen
 local Chess = PalmPilots.Chess
--- Keep the board above the hardware application keys (which begin at y=608).
-local BOARD_X,BOARD_Y,CELL = 172,205,48
+-- The playable LCD ends above the application keys at y=608.
+local BOARD_X,BOARD_Y,CELL = 188,182,44
+local CONTROLS_Y,CONTROLS_HEIGHT = 548,38
 
 local function game(ui)
     if not ui.chess or ui.chess.fen~=ui.data.chessFEN then
@@ -72,7 +73,9 @@ function S.render(ui)
     else
         label=state.turn=="w" and getText("UI_PalmPilots_ChessYourTurn") or getText("UI_PalmPilots_ChessThinking")
     end
-    ui:centerText(label,360,182,UIFont.Small)
+    if session.promotion then label=getText("UI_PalmPilots_ChessPromote") end
+    local statusY=120+(48-getTextManager():getFontHeight(UIFont.Small)/ui.scale)/2
+    ui:rightText(ui:fitText(label,320,UIFont.Small),596,statusY,UIFont.Small)
     for rank=8,1,-1 do
         for file=1,8 do
             local square=Chess.square(file,rank)
@@ -91,14 +94,14 @@ function S.render(ui)
             if piece then
                 local white=piece==string.upper(piece)
                 if white then
-                    ui:fill(x+6,y+5,36,38,1,0.86,0.90,0.79)
-                    ui:box(x+6,y+5,36,38)
+                    ui:fill(x+6,y+5,32,34,1,0.86,0.90,0.79)
+                    ui:box(x+6,y+5,32,34)
                 else
-                    ui:fill(x+6,y+5,36,38,1,0.31,0.40,0.29)
+                    ui:fill(x+6,y+5,32,34,1,0.31,0.40,0.29)
                 end
                 local letter=string.upper(piece)
-                if white then ui:centerText(letter,x+CELL/2,y+10,UIFont.Medium)
-                else ui:lightText(letter,x+CELL/2-7,y+10,UIFont.Medium) end
+                if white then ui:centerText(letter,x+CELL/2,y+8,UIFont.Medium)
+                else ui:lightText(letter,x+CELL/2-7,y+8,UIFont.Medium) end
             end
             ui.buttons[#ui.buttons+1]={x=x,y=y,w=CELL,h=CELL,
                 callback=function() chooseSquare(ui,square) end}
@@ -106,22 +109,19 @@ function S.render(ui)
     end
     ui:box(BOARD_X,BOARD_Y,CELL*8,CELL*8)
     if session.promotion then
-        ui:fill(152,660,416,70,1,0.71,0.78,0.65)
-        ui:centerText(getText("UI_PalmPilots_ChessPromote"),360,664,UIFont.Small)
         for i,choice in ipairs({"q","r","b","n"}) do
-            ui:button(string.upper(choice),174+(i-1)*94,687,78,34,function()
+            ui:button(string.upper(choice),204+(i-1)*84,CONTROLS_Y,66,CONTROLS_HEIGHT,function()
                 local pending=session.promotion
                 local move=pending and Chess.findMove(state,pending.from,pending.to,choice)
                 if move then commit(ui,Chess.apply(state,move)) end
             end)
         end
     else
-        ui:button(getText("UI_PalmPilots_ChessNew"),160,670,170,40,function()
+        ui:button(getText("UI_PalmPilots_ChessNew"),204,CONTROLS_Y,145,CONTROLS_HEIGHT,function()
             commit(ui,Chess.new())
         end)
-        ui:button(getText("UI_PalmPilots_Back"),390,670,170,40,function()
+        ui:button(getText("UI_PalmPilots_Back"),379,CONTROLS_Y,145,CONTROLS_HEIGHT,function()
             ui:setScreen("home")
         end)
-        ui:centerText(getText("UI_PalmPilots_ChessHint"),360,730,UIFont.Small)
     end
 end

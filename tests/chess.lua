@@ -64,20 +64,36 @@ equal(PalmPilots.Data.sanitize({chessFEN="broken"},false).chessFEN,C.toFEN(C.new
 
 getText=function(key) return key end
 UIFont={Small=1,Medium=2}
+getTextManager=function() return {getFontHeight=function() return 16 end} end
 dofile("Contents/mods/Palm Pilots/42/media/lua/client/PalmPilots/PalmPilotChessScreen.lua")
-local ui={data={chessFEN=C.toFEN(C.new())},buttons={},saves=0}
+local ui={data={chessFEN=C.toFEN(C.new())},buttons={},saves=0,scale=1}
 for _,method in ipairs({"title","centerText","fill","box","button","lightText"}) do
     ui[method]=function(self,...) end
 end
 ui.button=function(self,label,x,y,w,h,callback)
-    self.buttons[#self.buttons+1]={x=x,y=y,w=w,h=h,callback=callback}
+    self.buttons[#self.buttons+1]={label=label,x=x,y=y,w=w,h=h,callback=callback}
 end
+ui.rightText=function(self,value,x,y) self.statusText={value=value,x=x,y=y} end
+ui.fitText=function(self,value) return value end
 ui.save=function(self) self.saves=self.saves+1 end
+local function renderAndCheck(expectedStatus)
+    ui.buttons={}
+    ui.statusText=nil
+    PalmPilots.ChessScreen.render(ui)
+    equal(ui.statusText.value,expectedStatus,"status shown in title bar")
+    assert(ui.statusText.x>400 and ui.statusText.y>=120 and ui.statusText.y<168,"status is in title bar")
+    for _,button in ipairs(ui.buttons) do
+        assert(button.x>=116 and button.x+button.w<=612,"Chess button outside display width")
+        assert(button.y>=168 and button.y+button.h<608,"Chess button below playable screen")
+    end
+end
+renderAndCheck("UI_PalmPilots_ChessYourTurn")
+assert(#ui.buttons==66,"board and two controls rendered")
 local function clickSquare(name)
     ui.buttons={}
     PalmPilots.ChessScreen.render(ui)
     local f,r=C.coords(sq(name))
-    local x,y=172+(f-1)*48,205+(8-r)*48
+    local x,y=188+(f-1)*44,182+(8-r)*44
     for _,button in ipairs(ui.buttons) do
         if button.x==x and button.y==y then button.callback(); return end
     end
@@ -90,7 +106,16 @@ PalmPilots.ChessScreen.tick(ui)
 equal(C.fromFEN(ui.data.chessFEN).turn,"w","UI commits computer move")
 equal(ui.saves,1,"completed turn saved once")
 ui.chess=nil
-ui.buttons={}
-PalmPilots.ChessScreen.render(ui)
+renderAndCheck("UI_PalmPilots_ChessYourTurn")
 equal(ui.chess.state.board[sq("e4")],"P","UI reloads saved game")
+ui.data.chessFEN="4k3/P7/8/8/8/8/8/4K3 w - - 0 1"
+ui.chess=nil
+clickSquare("a7")
+clickSquare("a8")
+renderAndCheck("UI_PalmPilots_ChessPromote")
+equal(#ui.buttons,68,"board and four promotion controls rendered")
+for _,button in ipairs(ui.buttons) do
+    if button.label=="Q" then button.callback(); break end
+end
+equal(ui.chess.state.board[sq("a8")],"Q","UI promotion choice")
 print("Chess rules: all checks passed")
