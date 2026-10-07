@@ -3,11 +3,13 @@
 ## Unreleased
 
 - Added an original Chess app against a computer opponent, with per-device saved positions and standard move rules. The ChessGenius Palm OS binary is not bundled.
+- Chess now uses twelve sprites cut from the supplied piece art, highlights the selected piece and legal moves, and shows a delayed, animated computer move.
+- Active Chess play reduces Boredom and Unhappiness using Snake's rates; multiplayer applies the effect on the server through a bounded heartbeat.
 - Active Snake play now slowly reduces Boredom and Unhappiness on Build 42.20+.
 - Relief uses elapsed game time, is capped after long update gaps, and stops when play pauses or ends.
 - Multiplayer Snake relief is now applied by the server and synced back to the player after checking the held, powered device.
 - Added a PalmPilot Spawn Rate sandbox setting for container loot and office-worker carriers. Its default preserves existing behavior; custom rates compensate for high Other Loot.
-- Device save data is unchanged; multiplayer now uses a bounded Snake mood heartbeat.
+- Existing device fields migrate safely; Chess adds a saved position, and multiplayer uses bounded game mood heartbeats.
 
 ## 1.2.1 — Multiplayer equip/open fixes
 

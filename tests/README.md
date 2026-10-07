@@ -9,11 +9,16 @@ npx.cmd --yes --package fengari-node-cli fengari tests/chess.lua
 ```
 
 This checks opening move counts through three plies, castling, en passant,
-promotion, checkmate, saved-position round trips, a legal computer move, and
-the Chess screen's move/save/reload flow, title-bar status, and control bounds.
-In game, open Chess, make a move, close and reopen the same PalmPilot, and
-confirm that the position is preserved. Test with a multiplayer client as
-well, since the position is saved through normal per-device synchronization.
+promotion, checkmate, saved-position round trips, a legal computer move,
+sprite rendering, selection highlights, delayed computer animation, active
+single-player mood relief, client heartbeats, and the Chess screen's
+move/save/reload flow, title-bar status, and control bounds.
+In game, open Chess, select a piece, make a move, watch the computer think and
+move, then close and reopen the same PalmPilot to confirm the position is
+preserved. Test with a multiplayer client as well. With nonzero Boredom and
+Unhappiness, compare stats before and after active play; the multiplayer
+server should apply the change. Check that relief stops after inactivity,
+leaving Chess, or closing the device.
 
 ## Spawn setting checks
 
@@ -42,7 +47,8 @@ pause/resume, stat minimums, collision, and a long-update cap with mocked
 Build 42 character stats. It does not replace a live single-player and
 multiplayer check before publishing. The multiplayer harness also loads the
 real server command handler and checks device ownership, equipped hand,
-battery, session reset, elapsed-time cap, and stat sync with mocked game APIs.
+battery, session reset, elapsed-time cap, switching between Snake and Chess,
+and stat sync with mocked game APIs.
 
 For release verification, start with nonzero Boredom and Unhappiness, play
 Snake for at least one in-game hour in single-player and as an ordinary

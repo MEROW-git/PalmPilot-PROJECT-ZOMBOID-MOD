@@ -78,6 +78,11 @@ function MainUI:new(x,y,w,h,player,item,scale,data)
         o.appTextures[app]=getTexture(path)
         if not o.appTextures[app] then PalmPilots.Utils.log("Missing app icon: "..path) end
     end
+    o.chessPieceTextures={}
+    for piece,path in pairs(Config.chessPieces) do
+        o.chessPieceTextures[piece]=getTexture(path)
+        if not o.chessPieceTextures[piece] then PalmPilots.Utils.log("Missing Chess piece: "..path) end
+    end
     o.arrowTextures={}
     for direction,path in pairs(Config.snakeArrows) do
         o.arrowTextures[direction]=getTexture(path)
@@ -134,6 +139,7 @@ end
 
 function MainUI:close()
     if self.closed then return end; self.closed=true
+    if self.screen=="chess" then PalmPilots.ChessScreen.leave(self) end
     local returnItem=nil
     if self.data then
         self.data.uiPrefs.lastScreen=self.screen
@@ -228,6 +234,7 @@ end
 
 function MainUI:setScreen(screen)
     if screen~="todo" or self.screen~="todo" then self.todoList=nil end
+    if self.screen=="chess" and screen~="chess" then PalmPilots.ChessScreen.leave(self) end
     self.screen=screen; self.scroll=1; self.selected=nil; self.viewNote=nil; self.bodyScroll=0
     if screen~="snake" and self.snake then self.snake.running=false end
 end

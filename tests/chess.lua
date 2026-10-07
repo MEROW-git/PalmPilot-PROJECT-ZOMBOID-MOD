@@ -5,6 +5,10 @@ local C=PalmPilots.Chess
 local function equal(actual,expected,label)
     assert(actual==expected,(label or "value")..": expected "..tostring(expected)..", got "..tostring(actual))
 end
+local function nearly(actual,expected,label)
+    assert(math.abs(actual-expected)<0.00001,
+        (label or "value")..": expected "..tostring(expected)..", got "..tostring(actual))
+end
 local function sq(name)
     return C.square(string.byte(name,1)-96,tonumber(name:sub(2,2)))
 end
@@ -65,10 +69,36 @@ equal(PalmPilots.Data.sanitize({chessFEN="broken"},false).chessFEN,C.toFEN(C.new
 getText=function(key) return key end
 UIFont={Small=1,Medium=2}
 getTextManager=function() return {getFontHeight=function() return 16 end} end
+local realMs,worldMs=10000,0
+local mood={boredom=50,unhappiness=30}
+local clientMode=false
+local sent={}
+PalmPilots.Utils.now=function() return realMs end
+PalmPilots.Utils.worldTimeMs=function() return worldMs end
+PalmPilots.Utils.newID=function(prefix) return prefix.."-"..realMs end
+CharacterStat={BOREDOM="boredom",UNHAPPINESS="unhappiness"}
+isClient=function() return clientMode end
+sendClientCommand=function(player,module,command,args)
+    sent[#sent+1]={module=module,command=command,args=args}
+end
+PalmPilots.Constants.MODULE="PalmPilots"
+PalmPilots.Network={CHESS_MOOD="ChessMood"}
 dofile("Contents/mods/Palm Pilots/42/media/lua/client/PalmPilots/PalmPilotChessScreen.lua")
 local ui={data={chessFEN=C.toFEN(C.new())},buttons={},saves=0,scale=1}
+ui.player={getStats=function() return {remove=function(_,stat,amount)
+    mood[stat]=math.max(0,mood[stat]-amount)
+end} end}
+ui.itemID=101
+ui.deviceID="device-101"
+ui.chessPieceTextures={}
+for piece in ("KQBNRPkqbnrp"):gmatch(".") do ui.chessPieceTextures[piece]="texture:"..piece end
 for _,method in ipairs({"title","centerText","fill","box","button","lightText"}) do
     ui[method]=function(self,...) end
+end
+ui.s=function(self,value) return value end
+ui.drawTextureScaled=function(self,texture,x,y,w,h)
+    self.textureCalls=(self.textureCalls or 0)+1
+    self.lastTextureCall={texture=texture,x=x,y=y,w=w,h=h}
 end
 ui.button=function(self,label,x,y,w,h,callback)
     self.buttons[#self.buttons+1]={label=label,x=x,y=y,w=w,h=h,callback=callback}
@@ -89,6 +119,7 @@ local function renderAndCheck(expectedStatus)
 end
 renderAndCheck("UI_PalmPilots_ChessYourTurn")
 assert(#ui.buttons==66,"board and two controls rendered")
+assert(ui.textureCalls==32,"all starting pieces use sprites")
 local function clickSquare(name)
     ui.buttons={}
     PalmPilots.ChessScreen.render(ui)
@@ -100,11 +131,37 @@ local function clickSquare(name)
     error("missing UI square "..name)
 end
 clickSquare("e2")
+equal(ui.chess.selected,sq("e2"),"selected piece highlighted")
+assert(ui.chess.legalTargets[sq("e3")] and ui.chess.legalTargets[sq("e4")],"legal destinations highlighted")
 clickSquare("e4")
 equal(C.fromFEN(ui.data.chessFEN).board[sq("e4")],"P","UI commits player move")
+equal(ui.saves,1,"player move saved before delayed reply")
+PalmPilots.ChessScreen.tick(ui)
+equal(C.fromFEN(ui.data.chessFEN).turn,"b","computer does not move immediately")
+realMs=realMs+750; worldMs=worldMs+60000
+PalmPilots.ChessScreen.tick(ui)
+equal(C.fromFEN(ui.data.chessFEN).turn,"b","computer still thinking")
+assert(mood.boredom<50 and mood.unhappiness<30,"active Chess reduces mood stats")
+nearly(mood.boredom,49.9,"single-player Chess boredom cap")
+nearly(mood.unhappiness,29.95,"single-player Chess unhappiness cap")
+realMs=realMs+300; worldMs=worldMs+60000
+PalmPilots.ChessScreen.tick(ui)
+nearly(mood.boredom,49.8,"continued Chess boredom relief")
+assert(ui.chess.animation,"computer move begins animation")
+renderAndCheck("UI_PalmPilots_ChessMoving")
+local animationStart=ui.lastTextureCall
+realMs=realMs+260
+renderAndCheck("UI_PalmPilots_ChessMoving")
+local animationMiddle=ui.lastTextureCall
+assert(animationStart.x~=animationMiddle.x or animationStart.y~=animationMiddle.y,
+    "computer piece visibly travels between squares")
+equal(C.fromFEN(ui.data.chessFEN).turn,"b","position waits for animation")
+realMs=realMs+270
 PalmPilots.ChessScreen.tick(ui)
 equal(C.fromFEN(ui.data.chessFEN).turn,"w","UI commits computer move")
-equal(ui.saves,1,"completed turn saved once")
+equal(ui.saves,2,"both delayed moves saved")
+assert(ui.chess.lastMove and ui.chess.lastMove.from and ui.chess.lastMove.to,
+    "computer's move remains highlighted")
 ui.chess=nil
 renderAndCheck("UI_PalmPilots_ChessYourTurn")
 equal(ui.chess.state.board[sq("e4")],"P","UI reloads saved game")
@@ -118,4 +175,54 @@ for _,button in ipairs(ui.buttons) do
     if button.label=="Q" then button.callback(); break end
 end
 equal(ui.chess.state.board[sq("a8")],"Q","UI promotion choice")
+local before=mood.boredom
+PalmPilots.ChessScreen.leave(ui)
+realMs=realMs+1000; worldMs=worldMs+60000
+PalmPilots.ChessScreen.tick(ui)
+equal(mood.boredom,before,"leaving Chess stops mood relief")
+
+clientMode=true
+ui.data.chessFEN=C.toFEN(C.new())
+ui.chess=nil
+clickSquare("e2")
+realMs=realMs+250; worldMs=worldMs+60000
+PalmPilots.ChessScreen.tick(ui)
+assert(#sent==1 and sent[1].command=="ChessMood","multiplayer sends Chess heartbeat")
+equal(mood.boredom,before,"client does not change mood stats")
+realMs=realMs+1100; worldMs=worldMs+60000
+PalmPilots.ChessScreen.tick(ui)
+assert(#sent==2 and sent[2].args.session==sent[1].args.session,
+    "multiplayer heartbeat keeps session")
+realMs=realMs+31000; worldMs=worldMs+60000
+PalmPilots.ChessScreen.tick(ui)
+equal(#sent,2,"inactive Chess sends no heartbeat")
+clickSquare("d2")
+realMs=realMs+250; worldMs=worldMs+60000
+PalmPilots.ChessScreen.tick(ui)
+assert(#sent==3 and sent[3].args.session~=sent[1].args.session,
+    "new Chess interaction starts a fresh mood session")
+PalmPilots.ChessScreen.leave(ui)
+realMs=realMs+1100; worldMs=worldMs+60000
+PalmPilots.ChessScreen.tick(ui)
+equal(#sent,3,"leaving Chess stops heartbeats")
+
+-- A saved Black turn resumes with a fresh think delay after leaving the app.
+clientMode=false
+ui.data.chessFEN=C.toFEN(play(C.new(),"e2","e4"))
+ui.chess=nil
+PalmPilots.ChessScreen.tick(ui)
+realMs=realMs+1000
+PalmPilots.ChessScreen.tick(ui)
+assert(ui.chess.animation,"saved Black turn starts an animation")
+PalmPilots.ChessScreen.leave(ui)
+assert(not ui.chess.animation,"leaving cancels an unfinished animation")
+realMs=realMs+1000
+PalmPilots.ChessScreen.tick(ui)
+assert(not ui.chess.animation and ui.chess.state.turn=="b","reopened game thinks again")
+realMs=realMs+1000
+PalmPilots.ChessScreen.tick(ui)
+assert(ui.chess.animation,"computer resumes after a fresh delay")
+realMs=realMs+520
+PalmPilots.ChessScreen.tick(ui)
+equal(ui.chess.state.turn,"w","saved game completes delayed computer turn")
 print("Chess rules: all checks passed")

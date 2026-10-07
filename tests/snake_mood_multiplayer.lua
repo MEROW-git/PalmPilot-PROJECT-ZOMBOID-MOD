@@ -24,7 +24,7 @@ local player={
 }
 PalmPilots={
     Constants={ITEM_TYPE="PalmPilots.PalmPilot",MODULE="PalmPilots"},
-    Network={SYNC="SyncDevice",SNAKE_MOOD="SnakeMood",LIST_TARGETS="ListTargets",
+    Network={SYNC="SyncDevice",SNAKE_MOOD="SnakeMood",CHESS_MOOD="ChessMood",LIST_TARGETS="ListTargets",
         REQUEST="BeamRequest",LOCAL_REQUEST="LocalBeamRequest",RESPOND="BeamRespond"},
     Utils={
         now=function() return realMs end,
@@ -102,4 +102,32 @@ advance(1000,60000,"run-4")
 advance(1000,60000,"run-4") -- One-second sessions can earn relief.
 nearly(values.boredom,47.6)
 nearly(values.unhappiness,28.8)
-print("Snake multiplayer command checks passed")
+
+local function chessPing(session,override)
+    local args={itemID=101,deviceID="device-101",session=session}
+    if override then for key,value in pairs(override) do args[key]=value end end
+    Events.callback("PalmPilots","ChessMood",player,args)
+end
+realMs=realMs+1000; worldMs=worldMs+60000
+chessPing("chess-1") -- Switching games starts a new server interval.
+nearly(values.boredom,47.6)
+realMs=realMs+1000; worldMs=worldMs+60000
+chessPing("chess-1")
+nearly(values.boredom,47.4)
+nearly(values.unhappiness,28.7)
+assert(broadcasts[#broadcasts]==12)
+realMs=realMs+1000; worldMs=worldMs+60000
+ping("run-4") -- Alternating game commands cannot claim both intervals.
+nearly(values.boredom,47.4)
+realMs=realMs+1000; worldMs=worldMs+60000
+chessPing("chess-1")
+nearly(values.boredom,47.4)
+player.hand=nil
+realMs=realMs+1000; worldMs=worldMs+60000
+chessPing("chess-1")
+nearly(values.boredom,47.4)
+player.hand=item
+realMs=realMs+1000; worldMs=worldMs+60000
+chessPing("chess-1") -- An invalid heartbeat cannot bank its interval.
+nearly(values.boredom,47.4)
+print("Snake and Chess multiplayer mood command checks passed")

@@ -9,6 +9,7 @@ Server.commandTimes=Server.commandTimes or {}
 local commandIntervals={
     [N.SYNC]=50,
     [N.SNAKE_MOOD]=1000,
+    [N.CHESS_MOOD]=1000,
     [N.LIST_TARGETS]=250,
     [N.REQUEST]=500,
     [N.LOCAL_REQUEST]=250,
@@ -52,20 +53,20 @@ local function sync(player,args)
     syncItemFields(player,item)
 end
 
--- Snake runs in the client UI. In multiplayer the server owns the mood stats:
--- each valid heartbeat awards only elapsed server game time, with a short
--- expiry and a cap so pauses, disconnects and time jumps cannot bank relief.
-local SNAKE_MOOD_TIMEOUT_MS=8000
-local SNAKE_MOOD_MAX_ELAPSED_MS=5*60*1000
-local SNAKE_BOREDOM_PER_HOUR=12
-local SNAKE_UNHAPPINESS_PER_HOUR=6
-Server.snakeMoodSessions=Server.snakeMoodSessions or {}
+-- Snake and Chess run in the client UI. In multiplayer the server owns the
+-- mood stats; independent heartbeat sessions cannot bank time across apps.
+local GAME_MOOD_TIMEOUT_MS=8000
+local GAME_MOOD_MAX_ELAPSED_MS=5*60*1000
+local GAME_BOREDOM_PER_HOUR=12
+local GAME_UNHAPPINESS_PER_HOUR=6
+Server.gameMoodSessions=Server.gameMoodSessions or {}
 
-local function snakeMood(player,args)
+local function gameMood(player,args,game)
+    local sessions=Server.gameMoodSessions
     local id=player:getOnlineID()
     if type(args)~="table" or type(args.session)~="string"
             or #args.session<1 or #args.session>80 or player:isDead() then
-        Server.snakeMoodSessions[id]=nil
+        sessions[id]=nil
         return
     end
     local item=PalmPilots.Utils.findItemByID(player,args.itemID)
@@ -73,32 +74,33 @@ local function snakeMood(player,args)
             or not (PalmPilots.Utils.sameItem(item,player:getPrimaryHandItem())
                 or PalmPilots.Utils.sameItem(item,player:getSecondaryHandItem()))
             or item:getCurrentUsesFloat()<=0 then
-        Server.snakeMoodSessions[id]=nil
+        sessions[id]=nil
         return
     end
     local data=PalmPilots.Data.get(item)
     if data.deviceID~=tostring(args.deviceID or "") then
-        Server.snakeMoodSessions[id]=nil
+        sessions[id]=nil
         return
     end
 
     local now=PalmPilots.Utils.now()
     local worldNow=PalmPilots.Utils.worldTimeMs()
-    local previous=Server.snakeMoodSessions[id]
-    Server.snakeMoodSessions[id]={session=args.session,itemID=item:getID(),
+    local previous=sessions[id]
+    sessions[id]={game=game,session=args.session,itemID=item:getID(),
         realTime=now,worldTime=worldNow}
-    if not previous or previous.session~=args.session or previous.itemID~=item:getID()
-            or now-previous.realTime>SNAKE_MOOD_TIMEOUT_MS then return end
+    if not previous or previous.game~=game or previous.session~=args.session
+            or previous.itemID~=item:getID()
+            or now-previous.realTime>GAME_MOOD_TIMEOUT_MS then return end
     local elapsed=math.min(math.max(0,worldNow-previous.worldTime),
-        SNAKE_MOOD_MAX_ELAPSED_MS)
+        GAME_MOOD_MAX_ELAPSED_MS)
     if elapsed<=0 then return end
     local stats=player:getStats()
     if not stats then return end
     local hours=elapsed/3600000
     local boredomChanged=stats:remove(CharacterStat.BOREDOM,
-        SNAKE_BOREDOM_PER_HOUR*hours)
+        GAME_BOREDOM_PER_HOUR*hours)
     local unhappinessChanged=stats:remove(CharacterStat.UNHAPPINESS,
-        SNAKE_UNHAPPINESS_PER_HOUR*hours)
+        GAME_UNHAPPINESS_PER_HOUR*hours)
     if boredomChanged or unhappinessChanged then
         local mask=SyncPlayerStatsPacket.getBitMaskForStat(CharacterStat.BOREDOM)
             +SyncPlayerStatsPacket.getBitMaskForStat(CharacterStat.UNHAPPINESS)
@@ -111,7 +113,8 @@ function Server.onClientCommand(module,command,player,args)
     args=type(args)=="table" and args or {}
     if not allowCommand(player,command) then return end
     if command==N.SYNC then sync(player,args)
-    elseif command==N.SNAKE_MOOD then snakeMood(player,args)
+    elseif command==N.SNAKE_MOOD then gameMood(player,args,"snake")
+    elseif command==N.CHESS_MOOD then gameMood(player,args,"chess")
     elseif command==N.LIST_TARGETS then PalmPilots.BeamServer.listTargets(player)
     elseif command==N.REQUEST then PalmPilots.BeamServer.request(player,args)
     elseif command==N.LOCAL_REQUEST then PalmPilots.BeamServer.localRequest(player,args)
