@@ -46,6 +46,18 @@ state=C.fromFEN("4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1")
 state=play(state,"e5","d6")
 equal(state.board[sq("d5")],nil,"en passant capture")
 equal(state.board[sq("d6")],"P","en passant destination")
+state=C.fromFEN("4k3/8/8/8/3p4/2PP4/8/4K3 b - - 0 1")
+assert(not C.findMove(state,sq("d4"),sq("d3")),"Black pawn cannot capture straight ahead")
+assert(C.findMove(state,sq("d4"),sq("c3")),"Black pawn may capture diagonally")
+state=C.fromFEN("4k3/8/8/8/3p4/3P4/8/4K3 w - - 0 1")
+assert(not C.findMove(state,sq("d3"),sq("d4")),"White pawn cannot capture straight ahead")
+state=C.fromFEN("4k3/8/8/8/1p6/8/2P5/4K3 w - - 0 1")
+state=play(state,"c2","c4")
+local blackEnPassant=C.findMove(state,sq("b4"),sq("c3"))
+assert(blackEnPassant and blackEnPassant.special=="ep","Black can capture a two-step pawn en passant")
+state=C.apply(state,blackEnPassant)
+equal(state.board[sq("c3")],"p","Black en passant destination")
+equal(state.board[sq("c4")],nil,"Black en passant removes White pawn beside destination")
 state=C.fromFEN("4k3/P7/8/8/8/8/8/4K3 w - - 0 1")
 state=play(state,"a7","a8","n")
 equal(state.board[sq("a8")],"N","underpromotion")
@@ -228,6 +240,14 @@ PalmPilots.ChessScreen.tick(ui)
 local blackCapture=C.findMove(ui.chess.state,sq("d2"),sq("c1"),"q")
 assert(blackCapture,"test position allows Black capture")
 ui.chess.animation={move=blackCapture,start=realMs-520}
+renderAndCheck("UI_PalmPilots_ChessMoving")
+local targetVisible=false
+for _,call in ipairs(ui.drawnTextures) do
+    if call.texture=="texture:R" and call.x==188+2*44+1 and call.y==182+7*44+1 then
+        targetVisible=true
+    end
+end
+assert(targetVisible,"capture target remains visible while Black piece travels")
 PalmPilots.ChessScreen.tick(ui)
 equal(ui.data.chessCapturedWhite[1],"R","Black capture records White piece")
 renderAndCheck("UI_PalmPilots_ChessCheck")
@@ -237,6 +257,16 @@ for _,button in ipairs(ui.buttons) do
 end
 equal(#ui.data.chessCapturedWhite,0,"new game clears captured White pieces")
 equal(#ui.data.chessCapturedBlack,0,"new game clears captured Black pieces")
+ui.data.chessFEN="4k3/8/8/8/1pP5/8/8/4K3 b - c3 0 1"
+ui.chess=nil
+PalmPilots.ChessScreen.tick(ui)
+local enPassantCapture=C.findMove(ui.chess.state,sq("b4"),sq("c3"))
+assert(enPassantCapture and enPassantCapture.special=="ep","Black UI position allows en passant")
+ui.chess.animation={move=enPassantCapture,start=realMs-520}
+PalmPilots.ChessScreen.tick(ui)
+equal(ui.data.chessCapturedWhite[1],"P","Black en passant records captured White pawn")
+equal(ui.chess.lastMove.capture,sq("c4"),"en passant marks the pawn's captured square")
+renderAndCheck("UI_PalmPilots_ChessEnPassant")
 local before=mood.boredom
 PalmPilots.ChessScreen.leave(ui)
 realMs=realMs+1000; worldMs=worldMs+60000

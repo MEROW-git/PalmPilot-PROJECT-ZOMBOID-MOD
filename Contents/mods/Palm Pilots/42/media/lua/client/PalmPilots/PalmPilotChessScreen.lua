@@ -84,7 +84,13 @@ end
 
 local function commit(ui,state,move)
     local session=game(ui)
+    local capturedSquare
     if move then
+        if move.special=="ep" then
+            local toFile=Chess.coords(move.to)
+            local _,fromRank=Chess.coords(move.from)
+            capturedSquare=Chess.square(toFile,fromRank)
+        end
         local captured=move.special=="ep" and (session.state.turn=="w" and "p" or "P")
             or session.state.board[move.to]
         if captured then
@@ -104,7 +110,8 @@ local function commit(ui,state,move)
     session.promotion=nil
     session.animation=nil
     session.thinkStart=state.turn=="b" and U.now() or nil
-    session.lastMove=move and {from=move.from,to=move.to,at=U.now()} or nil
+    session.lastMove=move and {from=move.from,to=move.to,capture=capturedSquare,
+        special=move.special,at=U.now()} or nil
     if session.status~="playing" and session.status~="check" then stopMood(session) end
     ui.data.chessFEN=session.fen
     -- The computer now waits before replying, so persist the human move too.
@@ -206,6 +213,8 @@ function S.render(ui)
     elseif session.animation then label=getText("UI_PalmPilots_ChessMoving")
     elseif status=="check" then
         label=state.turn=="w" and getText("UI_PalmPilots_ChessCheck") or getText("UI_PalmPilots_ChessComputerCheck")
+    elseif session.lastMove and session.lastMove.special=="ep" then
+        label=getText("UI_PalmPilots_ChessEnPassant")
     else
         label=state.turn=="w" and getText("UI_PalmPilots_ChessYourTurn") or getText("UI_PalmPilots_ChessThinking")
     end
@@ -216,6 +225,12 @@ function S.render(ui)
     drawCaptured(ui,ui.data.chessCapturedBlack,543)
 
     local moving=session.animation and session.animation.move or nil
+    local movingCapture
+    if moving and moving.special=="ep" then
+        local toFile=Chess.coords(moving.to)
+        local _,fromRank=Chess.coords(moving.from)
+        movingCapture=Chess.square(toFile,fromRank)
+    end
     for rank=8,1,-1 do
         for file=1,8 do
             local square=Chess.square(file,rank)
@@ -224,10 +239,11 @@ function S.render(ui)
             local dark=(file+rank)%2==0
             if session.selected==square then
                 ui:fill(x,y,CELL,CELL,1,0.82,0.89,0.51)
-            elseif moving and (moving.from==square or moving.to==square) then
+            elseif moving and (moving.from==square or moving.to==square
+                    or movingCapture==square) then
                 ui:fill(x,y,CELL,CELL,1,0.77,0.83,0.46)
             elseif session.lastMove and (session.lastMove.from==square
-                    or session.lastMove.to==square) then
+                    or session.lastMove.to==square or session.lastMove.capture==square) then
                 ui:fill(x,y,CELL,CELL,1,0.66,0.75,0.47)
             elseif dark then
                 ui:fill(x,y,CELL,CELL,1,0.48,0.57,0.44)
@@ -239,7 +255,8 @@ function S.render(ui)
                 ui:box(x+4,y+4,CELL-8,CELL-8)
             end
             local piece=state.board[square]
-            if piece and not (moving and (moving.from==square or moving.to==square)) then
+            -- Keep the captured piece visible until the animated move lands.
+            if piece and not (moving and moving.from==square) then
                 drawPiece(ui,piece,x,y)
             end
             if session.selected==square then

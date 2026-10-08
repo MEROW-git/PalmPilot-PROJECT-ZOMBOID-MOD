@@ -35,6 +35,7 @@
   "UI_PalmPilots_ChessYourTurn": "Your move (White)",
   "UI_PalmPilots_ChessThinking": "Computer thinking...",
   "UI_PalmPilots_ChessMoving": "Computer moves...",
+  "UI_PalmPilots_ChessEnPassant": "En passant capture",
   "UI_PalmPilots_ChessCheck": "Check! Your move",
   "UI_PalmPilots_ChessComputerCheck": "Computer is in check",
   "UI_PalmPilots_ChessWon": "Checkmate - You win!",

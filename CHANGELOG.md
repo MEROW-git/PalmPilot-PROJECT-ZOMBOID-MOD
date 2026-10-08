@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Chess captures now leave the target piece visible until the computer's move animation lands. En passant highlights the pawn's captured square and briefly names the move.
 - Chess now displays captured White pieces to the left of the board and captured Black pieces to the right. Captures are saved with each PalmPilot's game; older saves reconstruct available captures from the position.
 - Added an original Chess app against a computer opponent, with per-device saved positions and standard move rules. The ChessGenius Palm OS binary is not bundled.
 - Chess now uses twelve sprites cut from the supplied piece art, highlights the selected piece and legal moves, and shows a delayed, animated computer move.
