@@ -52,7 +52,7 @@ The classic time-waster, now available during the apocalypse. While you actively
 
 ### Chess
 
-Play White against a compact computer opponent. Tap a piece to highlight it and its legal destinations, then tap a destination. The computer pauses briefly before moving its piece across the board. The game supports check and checkmate, castling, en passant, pawn promotion, stalemate, and the fifty-move draw rule. The current position is saved on each physical PalmPilot, so you can close it and continue later. Active Chess play slowly reduces Boredom and Unhappiness at the same rate as Snake; multiplayer applies the benefit on the server. The benefit stops after 30 seconds without a tap or when you leave Chess. This is an original in-mod game; the ChessGenius Palm OS `.prc` is not included or executed.
+Play White against a compact computer opponent. Tap a piece to highlight it and its legal destinations, then tap a destination. The computer pauses briefly before moving its piece across the board. Captured White pieces appear left of the board; captured Black pieces appear right. The game supports check and checkmate, castling, en passant, pawn promotion, stalemate, and the fifty-move draw rule. The current position and captured pieces are saved on each physical PalmPilot, so you can close it and continue later. Older saved positions infer captured pieces from the board where possible. Active Chess play slowly reduces Boredom and Unhappiness at the same rate as Snake; multiplayer applies the benefit on the server. The benefit stops after 30 seconds without a tap or when you leave Chess. This is an original in-mod game; the ChessGenius Palm OS `.prc` is not included or executed.
 
 ### Beam
 

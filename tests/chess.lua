@@ -65,6 +65,20 @@ local data=PalmPilots.Data.sanitize({chessFEN=saved,snakeHighScore=40},false)
 equal(data.chessFEN,saved,"device save keeps chess position")
 equal(data.snakeHighScore,40,"device save keeps existing score")
 equal(PalmPilots.Data.sanitize({chessFEN="broken"},false).chessFEN,C.toFEN(C.new()),"invalid device position resets")
+equal(#PalmPilots.Data.sanitize({chessFEN="broken",chessCapturedWhite={"P"}},false).chessCapturedWhite,
+    0,"invalid position clears stale captures")
+local captureState=C.new()
+captureState=play(captureState,"e2","e4")
+captureState=play(captureState,"d7","d5")
+captureState=play(captureState,"e4","d5")
+local migrated=PalmPilots.Data.sanitize({chessFEN=C.toFEN(captureState)},false)
+equal(#migrated.chessCapturedWhite,0,"old save infers no captured White pieces")
+equal(migrated.chessCapturedBlack[1],"p","old save infers captured Black pawn")
+local cleaned=PalmPilots.Data.sanitize({chessFEN=C.toFEN(captureState),
+    chessCapturedWhite={"P","k","R",13},chessCapturedBlack={}},false)
+equal(#cleaned.chessCapturedWhite,2,"invalid captured pieces removed")
+equal(cleaned.chessCapturedWhite[1],"P","saved White captures kept")
+equal(#cleaned.chessCapturedBlack,0,"explicit empty capture list kept")
 
 getText=function(key) return key end
 UIFont={Small=1,Medium=2}
@@ -99,6 +113,8 @@ ui.s=function(self,value) return value end
 ui.drawTextureScaled=function(self,texture,x,y,w,h)
     self.textureCalls=(self.textureCalls or 0)+1
     self.lastTextureCall={texture=texture,x=x,y=y,w=w,h=h}
+    self.drawnTextures=self.drawnTextures or {}
+    self.drawnTextures[#self.drawnTextures+1]=self.lastTextureCall
 end
 ui.button=function(self,label,x,y,w,h,callback)
     self.buttons[#self.buttons+1]={label=label,x=x,y=y,w=w,h=h,callback=callback}
@@ -109,6 +125,7 @@ ui.save=function(self) self.saves=self.saves+1 end
 local function renderAndCheck(expectedStatus)
     ui.buttons={}
     ui.statusText=nil
+    ui.drawnTextures={}
     PalmPilots.ChessScreen.render(ui)
     equal(ui.statusText.value,expectedStatus,"status shown in title bar")
     assert(ui.statusText.x>400 and ui.statusText.y>=120 and ui.statusText.y<168,"status is in title bar")
@@ -116,6 +133,13 @@ local function renderAndCheck(expectedStatus)
         assert(button.x>=116 and button.x+button.w<=612,"Chess button outside display width")
         assert(button.y>=168 and button.y+button.h<608,"Chess button below playable screen")
     end
+end
+local function hasSprite(texture,side)
+    for _,call in ipairs(ui.drawnTextures or {}) do
+        if call.texture==texture and ((side=="left" and call.x<188)
+                or (side=="right" and call.x>=540)) then return true end
+    end
+    return false
 end
 renderAndCheck("UI_PalmPilots_ChessYourTurn")
 assert(#ui.buttons==66,"board and two controls rendered")
@@ -175,6 +199,44 @@ for _,button in ipairs(ui.buttons) do
     if button.label=="Q" then button.callback(); break end
 end
 equal(ui.chess.state.board[sq("a8")],"Q","UI promotion choice")
+ui.data.chessFEN="4k3/8/8/3p4/4P3/8/8/4K3 w - - 0 1"
+ui.data.chessCapturedWhite={}
+ui.data.chessCapturedBlack={}
+ui.chess=nil
+clickSquare("e4")
+clickSquare("d5")
+equal(ui.data.chessCapturedBlack[1],"p","White capture records Black piece")
+renderAndCheck("UI_PalmPilots_ChessThinking")
+assert(hasSprite("texture:p","right"),"captured Black pawn drawn right of board")
+ui.chess=nil
+renderAndCheck("UI_PalmPilots_ChessThinking")
+assert(hasSprite("texture:p","right"),"captured piece survives reopening")
+
+ui.data.chessFEN="4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1"
+ui.data.chessCapturedWhite={}
+ui.data.chessCapturedBlack={}
+ui.chess=nil
+clickSquare("e5")
+clickSquare("d6")
+equal(ui.data.chessCapturedBlack[1],"p","en passant records captured pawn")
+
+ui.data.chessFEN="4k3/8/8/8/8/8/3p4/2R3K1 b - - 0 1"
+ui.data.chessCapturedWhite={}
+ui.data.chessCapturedBlack={}
+ui.chess=nil
+PalmPilots.ChessScreen.tick(ui)
+local blackCapture=C.findMove(ui.chess.state,sq("d2"),sq("c1"),"q")
+assert(blackCapture,"test position allows Black capture")
+ui.chess.animation={move=blackCapture,start=realMs-520}
+PalmPilots.ChessScreen.tick(ui)
+equal(ui.data.chessCapturedWhite[1],"R","Black capture records White piece")
+renderAndCheck("UI_PalmPilots_ChessCheck")
+assert(hasSprite("texture:R","left"),"captured White rook drawn left of board")
+for _,button in ipairs(ui.buttons) do
+    if button.label=="UI_PalmPilots_ChessNew" then button.callback(); break end
+end
+equal(#ui.data.chessCapturedWhite,0,"new game clears captured White pieces")
+equal(#ui.data.chessCapturedBlack,0,"new game clears captured Black pieces")
 local before=mood.boredom
 PalmPilots.ChessScreen.leave(ui)
 realMs=realMs+1000; worldMs=worldMs+60000

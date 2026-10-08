@@ -10,9 +10,11 @@ npx.cmd --yes --package fengari-node-cli fengari tests/chess.lua
 
 This checks opening move counts through three plies, castling, en passant,
 promotion, checkmate, saved-position round trips, a legal computer move,
-sprite rendering, selection highlights, delayed computer animation, active
+sprite rendering, selection highlights, captured piece placement and persistence,
+delayed computer animation, active
 single-player mood relief, client heartbeats, and the Chess screen's
-move/save/reload flow, title-bar status, and control bounds.
+move/save/reload flow, title-bar status, and control bounds. It covers capture
+tracking for both colors, en passant, new game reset, and older save migration.
 In game, open Chess, select a piece, make a move, watch the computer think and
 move, then close and reopen the same PalmPilot to confirm the position is
 preserved. Test with a multiplayer client as well. With nonzero Boredom and

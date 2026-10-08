@@ -136,15 +136,63 @@ local function cleanUIPrefs(raw)
     return prefs
 end
 
+local startingPieces={P=8,N=2,B=2,R=2,Q=1,p=8,n=2,b=2,r=2,q=1}
+local capturedOrder={"Q","R","B","N","P","q","r","b","n","p"}
+
+local function inferCaptured(state)
+    local remaining={}
+    for square=1,64 do
+        local piece=state.board[square]
+        if piece then remaining[piece]=(remaining[piece] or 0)+1 end
+    end
+    local white,black={},{}
+    for _,piece in ipairs(capturedOrder) do
+        local missing=math.max(0,startingPieces[piece]-(remaining[piece] or 0))
+        local list=piece==string.upper(piece) and white or black
+        for _=1,missing do list[#list+1]=piece end
+    end
+    -- A promoted pawn is no longer on the board. Avoid counting one as a
+    -- capture when the board has an extra queen, rook, bishop, or knight.
+    for _,side in ipairs({{white,"P",{"Q","R","B","N"}},
+            {black,"p",{"q","r","b","n"}}}) do
+        local extra=0
+        for _,piece in ipairs(side[3]) do
+            extra=extra+math.max(0,(remaining[piece] or 0)-startingPieces[piece])
+        end
+        for index=#side[1],1,-1 do
+            if extra==0 then break end
+            if side[1][index]==side[2] then table.remove(side[1],index); extra=extra-1 end
+        end
+    end
+    return white,black
+end
+
+local function cleanCaptured(raw,white,fallback)
+    if type(raw)~="table" then return fallback end
+    local cleaned={}
+    local allowed=white and "PNBRQ" or "pnbrq"
+    for index=1,math.min(#raw,16) do
+        local piece=raw[index]
+        if type(piece)=="string" and #piece==1 and allowed:find(piece,1,true) then
+            cleaned[#cleaned+1]=piece
+        end
+    end
+    return cleaned
+end
+
 function D.sanitize(raw, createID)
     raw = type(raw) == "table" and raw or {}
+    local savedChessState=PalmPilots.Chess.fromFEN(raw.chessFEN)
+    local chessState=savedChessState or PalmPilots.Chess.new()
+    local inferredWhite,inferredBlack=inferCaptured(chessState)
     local data = {
         schemaVersion=C.SCHEMA_VERSION,
         deviceID=tostring(raw.deviceID or (createID and U.newID("device") or "")),
         boundItemID=tostring(raw.boundItemID or ""),
         todos={}, notes={}, snakeHighScore=math.max(0, math.floor(tonumber(raw.snakeHighScore) or 0)),
-        chessFEN=PalmPilots.Chess.fromFEN(raw.chessFEN) and raw.chessFEN
-            or PalmPilots.Chess.toFEN(PalmPilots.Chess.new()),
+        chessFEN=PalmPilots.Chess.toFEN(chessState),
+        chessCapturedWhite=cleanCaptured(savedChessState and raw.chessCapturedWhite,true,inferredWhite),
+        chessCapturedBlack=cleanCaptured(savedChessState and raw.chessCapturedBlack,false,inferredBlack),
         uiPrefs=cleanUIPrefs(raw.uiPrefs),
         deviceName=U.clampText(raw.deviceName, C.MAX_DEVICE_NAME),
         batteryLevel=cleanBatteryLevel(raw.batteryLevel),

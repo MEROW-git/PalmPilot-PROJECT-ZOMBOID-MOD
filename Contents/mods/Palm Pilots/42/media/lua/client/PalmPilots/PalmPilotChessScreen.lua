@@ -84,6 +84,18 @@ end
 
 local function commit(ui,state,move)
     local session=game(ui)
+    if move then
+        local captured=move.special=="ep" and (session.state.turn=="w" and "p" or "P")
+            or session.state.board[move.to]
+        if captured then
+            local key=captured==string.upper(captured) and "chessCapturedWhite" or "chessCapturedBlack"
+            ui.data[key]=ui.data[key] or {}
+            if #ui.data[key]<16 then ui.data[key][#ui.data[key]+1]=captured end
+        end
+    else
+        ui.data.chessCapturedWhite={}
+        ui.data.chessCapturedBlack={}
+    end
     session.state=state
     session.status=Chess.status(state)
     session.fen=Chess.toFEN(state)
@@ -162,6 +174,22 @@ local function drawPiece(ui,piece,x,y)
     else ui:lightText(letter,x+CELL/2-7,y+8,UIFont.Medium) end
 end
 
+local function drawCaptured(ui,pieces,x)
+    for index,piece in ipairs(pieces or {}) do
+        if index>16 then break end
+        local column=(index-1)%2
+        local row=math.floor((index-1)/2)
+        local px=x+column*33
+        local py=BOARD_Y+row*43
+        local texture=ui.chessPieceTextures and ui.chessPieceTextures[piece]
+        if texture then
+            ui:drawTextureScaled(texture,ui:s(px),ui:s(py),ui:s(32),ui:s(39),1,1,1,1)
+        else
+            ui:centerText(string.upper(piece),px+16,py+8,UIFont.Small)
+        end
+    end
+end
+
 function S.render(ui)
     local session=game(ui)
     local state=session.state
@@ -183,6 +211,9 @@ function S.render(ui)
     end
     local statusY=120+(48-getTextManager():getFontHeight(UIFont.Small)/ui.scale)/2
     ui:rightText(ui:fitText(label,320,UIFont.Small),596,statusY,UIFont.Small)
+
+    drawCaptured(ui,ui.data.chessCapturedWhite,119)
+    drawCaptured(ui,ui.data.chessCapturedBlack,543)
 
     local moving=session.animation and session.animation.move or nil
     for rank=8,1,-1 do
