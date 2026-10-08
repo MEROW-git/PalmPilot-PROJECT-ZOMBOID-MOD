@@ -254,6 +254,15 @@ local function drawCaptured(ui,pieces,x)
     end
 end
 
+-- Rotate only the view. Square numbers, legal moves, and network packets stay
+-- in the same White-oriented coordinates on both clients and the server.
+local function boardPosition(session,file,rank)
+    if session.multiplayer and session.color=="b" then
+        return BOARD_X+(8-file)*CELL,BOARD_Y+(rank-1)*CELL
+    end
+    return BOARD_X+(file-1)*CELL,BOARD_Y+(8-rank)*CELL
+end
+
 function S.render(ui)
     ui:title(getText("UI_PalmPilots_Chess"))
     if ui.chessView=="disconnected" then
@@ -367,8 +376,7 @@ function S.render(ui)
     for rank=8,1,-1 do
         for file=1,8 do
             local square=Chess.square(file,rank)
-            local x=BOARD_X+(file-1)*CELL
-            local y=BOARD_Y+(8-rank)*CELL
+            local x,y=boardPosition(session,file,rank)
             local dark=(file+rank)%2==0
             if session.selected==square then
                 ui:fill(x,y,CELL,CELL,1,0.82,0.89,0.51)
@@ -406,8 +414,10 @@ function S.render(ui)
         local toFile,toRank=Chess.coords(moving.to)
         local progress=math.min(1,math.max(0,(now-session.animation.start)/MOVE_MS))
         progress=progress*progress*(3-2*progress)
-        local x=BOARD_X+(fromFile-1+(toFile-fromFile)*progress)*CELL
-        local y=BOARD_Y+(8-fromRank+(fromRank-toRank)*progress)*CELL
+        local fromX,fromY=boardPosition(session,fromFile,fromRank)
+        local toX,toY=boardPosition(session,toFile,toRank)
+        local x=fromX+(toX-fromX)*progress
+        local y=fromY+(toY-fromY)*progress
         drawPiece(ui,state.board[moving.from],x,y)
     end
 

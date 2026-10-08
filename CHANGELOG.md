@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Multiplayer Chess rotates the board for the Black player, keeping Black's pieces at the bottom while clicks and move highlights still use the correct squares.
 - Live Chess now shows Disconnected when players separate or a PalmPilot becomes unavailable, with a direct option to start a new multiplayer match. Continue is labeled for the saved solo game only.
 - Chess now opens a Continue solo game / New solo game / New multiplayer game menu. Nearby players can accept a live two-player match within Beam's three-tile, same-floor range; the server validates turns and legal moves. Solo saves remain separate from live matches.
 - Chess captures now leave the target piece visible until the computer's move animation lands. En passant highlights the pawn's captured square and briefly names the move.

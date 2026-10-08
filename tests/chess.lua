@@ -172,6 +172,12 @@ local function hasSprite(texture,side)
     end
     return false
 end
+local function hasBoardSprite(texture,x,y)
+    for _,call in ipairs(ui.drawnTextures or {}) do
+        if call.texture==texture and call.x==x and call.y==y then return true end
+    end
+    return false
+end
 renderAndCheck("UI_PalmPilots_ChessYourTurn")
 assert(#ui.buttons==66,"board and two controls rendered")
 assert(ui.textureCalls==32,"all starting pieces use sprites")
@@ -179,7 +185,10 @@ local function clickSquare(name)
     ui.buttons={}
     PalmPilots.ChessScreen.render(ui)
     local f,r=C.coords(sq(name))
-    local x,y=188+(f-1)*44,182+(8-r)*44
+    local x,y
+    if ui.chess and ui.chess.multiplayer and ui.chess.color=="b" then
+        x,y=188+(8-f)*44,182+(r-1)*44
+    else x,y=188+(f-1)*44,182+(8-r)*44 end
     for _,button in ipairs(ui.buttons) do
         if button.x==x and button.y==y then button.callback(); return end
     end
@@ -349,7 +358,13 @@ PalmPilots.ChessScreen.receiveState(ui,{sessionID="match-1",color="b",
     fen=C.toFEN(multiplayerPosition),revision=1,capturedWhite={},capturedBlack={}})
 equal(ui.chessView,"board","incoming match opens Chess board")
 renderAndCheck("UI_PalmPilots_ChessYourMove")
+assert(hasBoardSprite("texture:r",189,491),
+    "Black's h8 rook appears at the bottom-left in Black's view")
+assert(hasBoardSprite("texture:R",497,183),
+    "White's a1 rook appears at the top-right in Black's view")
 clickSquare("e7")
+equal(ui.chess.selected,sq("e7"),"rotated click selects the logical Black pawn")
+assert(ui.chess.legalTargets[sq("e5")],"rotated board keeps legal destinations")
 clickSquare("e5")
 assert(sentMove and sentMove.sessionID=="match-1"
     and sentMove.move.from==sq("e7") and sentMove.move.to==sq("e5"),
@@ -368,6 +383,9 @@ equal(ui.chessView,"lobby","retry searches for a new opponent")
 equal(chessTargetScans,1,"retry refreshes nearby players")
 PalmPilots.ChessScreen.receiveState(ui,{sessionID="match-2",color="w",
     fen=C.toFEN(C.new()),revision=0,capturedWhite={},capturedBlack={}})
+renderAndCheck("UI_PalmPilots_ChessYourMove")
+assert(hasBoardSprite("texture:R",189,491),
+    "White still sees the normal orientation in multiplayer")
 PalmPilots.ChessScreen.leave(ui,"closed")
 equal(closedMatch,"match-2","leaving an active match notifies server")
 equal(closedReason,"closed","closing the PalmPilot identifies disconnection")

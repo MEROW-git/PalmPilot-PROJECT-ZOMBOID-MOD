@@ -15,6 +15,7 @@ This checks opening move counts through three plies, castling, en passant,
 forward-blocked and diagonal pawn captures, promotion, checkmate,
 saved-position round trips, a legal computer move,
 sprite rendering, selection highlights, captured piece placement and persistence,
+Black-side board rotation and click mapping,
 delayed computer animation (including a visible capture target), active
 single-player mood relief, client heartbeats, and the Chess screen's
 move/save/reload flow, title-bar status, and control bounds. It covers capture
