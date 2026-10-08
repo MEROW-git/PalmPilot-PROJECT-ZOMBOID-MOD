@@ -139,7 +139,7 @@ end
 
 function MainUI:close()
     if self.closed then return end; self.closed=true
-    if self.screen=="chess" then PalmPilots.ChessScreen.leave(self) end
+    if self.screen=="chess" then PalmPilots.ChessScreen.leave(self,"closed") end
     local returnItem=nil
     if self.data then
         self.data.uiPrefs.lastScreen=self.screen
@@ -234,7 +234,7 @@ end
 
 function MainUI:setScreen(screen)
     if screen~="todo" or self.screen~="todo" then self.todoList=nil end
-    if self.screen=="chess" and screen~="chess" then PalmPilots.ChessScreen.leave(self) end
+    if self.screen=="chess" and screen~="chess" then PalmPilots.ChessScreen.leave(self,"switch") end
     self.screen=screen; self.scroll=1; self.selected=nil; self.viewNote=nil; self.bodyScroll=0
     if screen=="chess" then self.chessView="menu" end
     if screen~="snake" and self.snake then self.snake.running=false end

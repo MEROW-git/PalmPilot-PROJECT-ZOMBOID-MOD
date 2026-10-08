@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Chess now opens a Continue / New game / Multiplayer menu. Nearby players can accept a live two-player match within Beam's three-tile, same-floor range; the server validates turns and legal moves. Solo saves remain separate from live matches.
+- Live Chess now shows Disconnected when players separate or a PalmPilot becomes unavailable, with a direct option to start a new multiplayer match. Continue is labeled for the saved solo game only.
+- Chess now opens a Continue solo game / New solo game / New multiplayer game menu. Nearby players can accept a live two-player match within Beam's three-tile, same-floor range; the server validates turns and legal moves. Solo saves remain separate from live matches.
 - Chess captures now leave the target piece visible until the computer's move animation lands. En passant highlights the pawn's captured square and briefly names the move.
 - Chess now displays captured White pieces to the left of the board and captured Black pieces to the right. Captures are saved with each PalmPilot's game; older saves reconstruct available captures from the position.
 - Added an original Chess app against a computer opponent, with per-device saved positions and standard move rules. The ChessGenius Palm OS binary is not bundled.

@@ -31,11 +31,11 @@ local function stopMood(session)
     session.lastActivity=nil
 end
 
-function S.leave(ui)
+function S.leave(ui,reason)
     local session=ui.chess
     if not session then return end
     if session.multiplayer then
-        PalmPilots.Client.leaveChess(ui,session.sessionID)
+        PalmPilots.Client.leaveChess(ui,session.sessionID,reason)
         ui.chess=nil
     end
     stopMood(session)
@@ -70,6 +70,7 @@ function S.receiveState(ui,args)
     session.animation=nil
     ui.chess=session
     ui.chessView="board"
+    ui.chessDisconnectedKey=nil
     ui.chessInvitePending=false
 end
 
@@ -78,12 +79,15 @@ function S.receiveEnd(ui,args)
     if session and session.multiplayer and session.sessionID==args.sessionID then
         stopMood(session)
         ui.chess=nil
-        ui.chessView="menu"
+        ui.chessDisconnectedKey=args.key or "UI_PalmPilots_ChessDisconnected"
+        ui.chessView="disconnected"
+        return true
     end
+    return false
 end
 
 local function backToMenu(ui)
-    S.leave(ui)
+    S.leave(ui,"menu")
     ui.chessView="menu"
 end
 
@@ -252,6 +256,22 @@ end
 
 function S.render(ui)
     ui:title(getText("UI_PalmPilots_Chess"))
+    if ui.chessView=="disconnected" then
+        ui:centerText(getText("UI_PalmPilots_ChessDisconnectedTitle"),360,205,UIFont.Medium)
+        ui:wrappedText(getText(ui.chessDisconnectedKey or
+            "UI_PalmPilots_ChessDisconnected"),155,265,410,0,4)
+        ui:button(getText("UI_PalmPilots_ChessMultiplayer"),220,425,280,48,function()
+            ui.chessDisconnectedKey=nil
+            ui.chessView="lobby"
+            PalmPilots.Client.listChessTargets(ui)
+        end)
+        ui:button(getText("UI_PalmPilots_Back"),220,CONTROLS_Y,280,
+            CONTROLS_HEIGHT,function()
+                ui.chessDisconnectedKey=nil
+                ui.chessView="menu"
+            end)
+        return
+    end
     if ui.chessView~="board" then
         if ui.chessView=="lobby" then
             ui:centerText(getText("UI_PalmPilots_ChessNearby"),360,190,UIFont.Medium)
@@ -284,7 +304,7 @@ function S.render(ui)
             ui:button(getText("UI_PalmPilots_ChessContinue"),220,275,280,48,function()
                 ui.chessView="board"; game(ui)
             end)
-            ui:button(getText("UI_PalmPilots_ChessNew"),220,340,280,48,function()
+            ui:button(getText("UI_PalmPilots_ChessNewSolo"),220,340,280,48,function()
                 ui.chess=nil; commit(ui,Chess.new()); ui.chessView="board"
             end)
             ui:button(getText("UI_PalmPilots_ChessMultiplayer"),220,405,280,48,function()

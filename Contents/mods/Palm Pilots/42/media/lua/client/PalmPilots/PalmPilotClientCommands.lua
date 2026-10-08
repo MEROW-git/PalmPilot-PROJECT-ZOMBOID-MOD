@@ -180,10 +180,10 @@ function Client.moveChess(ui,sessionID,move)
         {sessionID=sessionID,from=move.from,to=move.to,promotion=move.promotion})
 end
 
-function Client.leaveChess(ui,sessionID)
+function Client.leaveChess(ui,sessionID,reason)
     if not isClient() then return end
     sendClientCommand(ui.player,PalmPilots.Constants.MODULE,N.CHESS_LEAVE,
-        {sessionID=sessionID})
+        {sessionID=sessionID,reason=reason})
 end
 
 local function findLocalDevice(deviceID,preferredPlayer)
@@ -288,13 +288,15 @@ function Client.onServerCommand(module,command,args)
     elseif command==N.CHESS_END then
         local open=recipient and PalmPilots.MainUI
             and PalmPilots.MainUI.instances[recipient:getPlayerNum()]
+        local shownOnChess=false
         if open then
             open.chessInvitePending=false
-            if args.sessionID and PalmPilots.ChessScreen.receiveEnd then
-                PalmPilots.ChessScreen.receiveEnd(open,args)
+            if args.sessionID and not open.closed and open.screen=="chess"
+                    and PalmPilots.ChessScreen.receiveEnd then
+                shownOnChess=PalmPilots.ChessScreen.receiveEnd(open,args)==true
             end
         end
-        if args.key and recipient then
+        if args.key and recipient and not shownOnChess then
             PalmPilots.Dialogs.message(getText(args.key),recipient:getPlayerNum())
         end
     elseif command==N.OFFER then

@@ -62,7 +62,14 @@ assert(ui.screen=="chess" and ui.chessView=="board" and ui.chess.color=="b",
     "server state opens Black's board")
 assert(ui.data.chessFEN=="solo-saved-position","live match does not change solo save")
 Client.onServerCommand("PalmPilots","ChessEnd",{recipientOnlineID=7,
-    sessionID="match-1",key="UI_PalmPilots_ChessOutOfRange"})
-assert(ui.chessView=="menu" and ui.chess==nil,"server end clears match")
-assert(messages[#messages]=="UI_PalmPilots_ChessOutOfRange","range end is explained")
+    sessionID="match-1",key="UI_PalmPilots_ChessDisconnectedRange"})
+assert(ui.chessView=="disconnected" and ui.chess==nil,"server end shows disconnected screen")
+assert(ui.chessDisconnectedKey=="UI_PalmPilots_ChessDisconnectedRange",
+    "range reason is displayed on the PalmPilot")
+assert(#messages==0,"open Chess screen does not get a duplicate modal")
+ui.closed=true
+Client.onServerCommand("PalmPilots","ChessEnd",{recipientOnlineID=7,
+    sessionID="match-2",key="UI_PalmPilots_ChessDisconnected"})
+assert(messages[#messages]=="UI_PalmPilots_ChessDisconnected",
+    "put-away device still shows a disconnected message")
 print("Live Chess client command checks passed")

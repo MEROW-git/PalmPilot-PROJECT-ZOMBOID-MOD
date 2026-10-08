@@ -98,6 +98,30 @@ black.x=4
 clock=clock+1000
 Events.cleanup()
 assert(packet("ChessEnd",1).sessionID==match,"moving beyond three tiles ends match")
+assert(packet("ChessEnd",1).key=="UI_PalmPilots_ChessDisconnectedRange",
+    "range exit reports disconnected")
 assert(not S.sessions[match] and not S.byPlayer[1] and not S.byPlayer[2],
     "server releases match after range exit")
+black.x=2
+S.invite(white,{itemID=white.item.id,deviceID=white.item.data.deviceID,targetOnlineID=2})
+invitation=packet("ChessOffer",2)
+S.reply(black,{requestID=invitation.requestID,accept=true,
+    itemID=black.item.id,deviceID=black.item.data.deviceID})
+local deviceMatch=packet("ChessState",1).sessionID
+black.hand="none"
+clock=clock+1000
+Events.cleanup()
+assert(packet("ChessEnd",1).sessionID==deviceMatch
+    and packet("ChessEnd",1).key=="UI_PalmPilots_ChessDisconnectedDevice",
+    "putting PalmPilot away disconnects both players")
+black.hand="secondary"
+S.invite(white,{itemID=white.item.id,deviceID=white.item.data.deviceID,targetOnlineID=2})
+invitation=packet("ChessOffer",2)
+S.reply(black,{requestID=invitation.requestID,accept=true,
+    itemID=black.item.id,deviceID=black.item.data.deviceID})
+local closedMatch=packet("ChessState",1).sessionID
+S.leave(black,{sessionID=closedMatch,reason="closed"})
+assert(packet("ChessEnd",1).key=="UI_PalmPilots_ChessDisconnected"
+    and packet("ChessEnd",2).key=="UI_PalmPilots_ChessDisconnected",
+    "closing a PalmPilot reports disconnected to both players")
 print("Live Chess multiplayer server checks passed")

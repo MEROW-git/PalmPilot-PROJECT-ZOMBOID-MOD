@@ -25,7 +25,8 @@ through the server save handler, that the server preserves the position and
 captured pieces, and that its rate limit and device identity check work.
 The live-match checks cover target distance, an equipped device in the second
 hand, invitations, both colors, turn order, illegal moves, capture sync,
-range exit, client offer handling, and keeping the solo save separate.
+range exit, putting away a device, the Disconnected screen, client offer
+handling, and keeping the solo save separate.
 In game, open Chess, select a piece, make a move, watch the computer think and
 move, then close and reopen the same PalmPilot to confirm the position is
 preserved. Test with a multiplayer client as well. With nonzero Boredom and
@@ -34,9 +35,11 @@ server should apply the change. Check that relief stops after inactivity,
 leaving Chess, or closing the device.
 For a live two-player check, host a game with two ordinary players. Equip a
 powered PalmPilot on each, enable Beam, stand within three tiles on the same
-floor, and open Chess > Multiplayer. Confirm both boards update after White
-and Black move, then step out of range and check that both matches end. Also
-try declining an invitation and switching floors. Restart both clients and
+floor, and open Chess > New multiplayer game. Confirm both boards update after
+White and Black move, then step out of range and check that both screens say
+Disconnected. Start a new match, put one PalmPilot away, and check the
+remaining player's Disconnected screen. Continue solo game should still open
+the saved computer game. Also try declining an invitation and switching floors. Restart both clients and
 the server after installing the same mod files.
 
 ## Spawn setting checks

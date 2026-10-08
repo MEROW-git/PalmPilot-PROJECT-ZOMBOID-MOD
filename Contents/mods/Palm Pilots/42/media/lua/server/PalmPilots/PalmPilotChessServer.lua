@@ -47,11 +47,19 @@ local function pair(session)
     return getPlayerByOnlineID(session.whiteID),getPlayerByOnlineID(session.blackID)
 end
 
-local function usable(session)
+local function disconnectReason(session)
     local white,black=pair(session)
-    return inRange(white,black)
-        and heldDevice(white,session.whiteItemID,session.whiteDeviceID)
-        and heldDevice(black,session.blackItemID,session.blackDeviceID)
+    if not white or not black or white:isDead() or black:isDead() then
+        return "UI_PalmPilots_ChessDisconnected"
+    end
+    if not inRange(white,black) then
+        return "UI_PalmPilots_ChessDisconnectedRange"
+    end
+    if not heldDevice(white,session.whiteItemID,session.whiteDeviceID)
+            or not heldDevice(black,session.blackItemID,session.blackDeviceID) then
+        return "UI_PalmPilots_ChessDisconnectedDevice"
+    end
+    return nil
 end
 
 local function endSession(session,key)
@@ -157,7 +165,8 @@ function S.move(player,args)
     if not id or id~=tostring(args.sessionID or "") then return end
     local session=S.sessions[id]
     if not session then return end
-    if not usable(session) then endSession(session,"UI_PalmPilots_ChessOutOfRange"); return end
+    local disconnected=disconnectReason(session)
+    if disconnected then endSession(session,disconnected); return end
     local color=player:getOnlineID()==session.whiteID and "w" or "b"
     if session.state.turn~=color or Chess.status(session.state)~="playing"
             and Chess.status(session.state)~="check" then return end
@@ -184,10 +193,11 @@ function S.leave(player,args)
             S.byPlayer[session.whiteID]=nil
             S.byPlayer[session.blackID]=nil
             local white,black=pair(session)
+            local reason="UI_PalmPilots_ChessDisconnected"
             send(white,N.CHESS_END,{sessionID=id,
-                key=white~=player and "UI_PalmPilots_ChessOpponentLeft" or nil})
+                key=(white~=player or args.reason=="closed") and reason or nil})
             send(black,N.CHESS_END,{sessionID=id,
-                key=black~=player and "UI_PalmPilots_ChessOpponentLeft" or nil})
+                key=(black~=player or args.reason=="closed") and reason or nil})
         end
     end
 end
@@ -204,7 +214,8 @@ function S.cleanup()
         end
     end
     for _,session in pairs(S.sessions) do
-        if not usable(session) then endSession(session,"UI_PalmPilots_ChessOutOfRange") end
+        local disconnected=disconnectReason(session)
+        if disconnected then endSession(session,disconnected) end
     end
 end
 

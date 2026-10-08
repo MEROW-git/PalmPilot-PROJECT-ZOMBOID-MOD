@@ -119,7 +119,7 @@ ui.itemID=101
 ui.deviceID="device-101"
 ui.chessPieceTextures={}
 for piece in ("KQBNRPkqbnrp"):gmatch(".") do ui.chessPieceTextures[piece]="texture:"..piece end
-for _,method in ipairs({"title","centerText","fill","box","button","lightText"}) do
+for _,method in ipairs({"title","centerText","fill","box","button","lightText","wrappedText"}) do
     ui[method]=function(self,...) end
 end
 ui.s=function(self,value) return value end
@@ -337,10 +337,11 @@ realMs=realMs+520
 PalmPilots.ChessScreen.tick(ui)
 equal(ui.chess.state.turn,"w","saved game completes delayed computer turn")
 local soloFEN=ui.data.chessFEN
-local sentMove,closedMatch
+local sentMove,closedMatch,closedReason,chessTargetScans
 PalmPilots.Client={
     moveChess=function(_,sessionID,move) sentMove={sessionID=sessionID,move=move} end,
-    leaveChess=function(_,sessionID) closedMatch=sessionID end,
+    leaveChess=function(_,sessionID,reason) closedMatch=sessionID; closedReason=reason end,
+    listChessTargets=function() chessTargetScans=(chessTargetScans or 0)+1 end,
 }
 clientMode=true
 local multiplayerPosition=play(C.new(),"e2","e4")
@@ -354,11 +355,20 @@ assert(sentMove and sentMove.sessionID=="match-1"
     and sentMove.move.from==sq("e7") and sentMove.move.to==sq("e5"),
     "Black move is sent to server")
 equal(ui.data.chessFEN,soloFEN,"live match leaves solo save untouched")
-PalmPilots.ChessScreen.receiveEnd(ui,{sessionID="match-1"})
-equal(ui.chessView,"menu","ended match returns to Chess menu")
+PalmPilots.ChessScreen.receiveEnd(ui,{sessionID="match-1",
+    key="UI_PalmPilots_ChessDisconnectedRange"})
+equal(ui.chessView,"disconnected","ended match shows disconnected screen")
 assert(ui.chess==nil,"ended match clears live board")
+ui.buttons={}
+PalmPilots.ChessScreen.render(ui)
+assert(#ui.buttons==2 and ui.buttons[1].label=="UI_PalmPilots_ChessMultiplayer",
+    "disconnected screen offers a fresh multiplayer game without Continue")
+ui.buttons[1].callback()
+equal(ui.chessView,"lobby","retry searches for a new opponent")
+equal(chessTargetScans,1,"retry refreshes nearby players")
 PalmPilots.ChessScreen.receiveState(ui,{sessionID="match-2",color="w",
     fen=C.toFEN(C.new()),revision=0,capturedWhite={},capturedBlack={}})
-PalmPilots.ChessScreen.leave(ui)
+PalmPilots.ChessScreen.leave(ui,"closed")
 equal(closedMatch,"match-2","leaving an active match notifies server")
+equal(closedReason,"closed","closing the PalmPilot identifies disconnection")
 print("Chess rules: all checks passed")
