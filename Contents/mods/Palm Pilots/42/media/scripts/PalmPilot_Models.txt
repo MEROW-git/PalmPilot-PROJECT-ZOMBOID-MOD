@@ -7,12 +7,12 @@ module Base
         scale = 1.0,
         attachment Bip01_Prop1
         {
-            offset = 0.0 0.045 0.0,
+            offset = 0.0 0.10 0.0,
             rotate = 180.0 0.0 -180.0,
         }
         attachment Bip01_Prop2
         {
-            offset = 0.0 0.045 0.0,
+            offset = 0.0 0.10 0.0,
             rotate = 180.0 0.0 -180.0,
         }
         attachment walkie_belt_left
