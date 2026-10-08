@@ -236,6 +236,7 @@ function MainUI:setScreen(screen)
     if screen~="todo" or self.screen~="todo" then self.todoList=nil end
     if self.screen=="chess" and screen~="chess" then PalmPilots.ChessScreen.leave(self) end
     self.screen=screen; self.scroll=1; self.selected=nil; self.viewNote=nil; self.bodyScroll=0
+    if screen=="chess" then self.chessView="menu" end
     if screen~="snake" and self.snake then self.snake.running=false end
 end
 
@@ -435,8 +436,10 @@ function MainUI:scrollBy(delta)
     if self.screen=="memo" and self.viewNote then self.bodyScroll=math.max(0,(self.bodyScroll or 0)+delta); return end
     local count=self.screen=="todo" and PalmPilots.TodoScreen.count(self)
         or self.screen=="memo" and #self.data.notes
+        or self.screen=="chess" and self.chessView=="lobby" and #(self.chessTargets or {})
         or self.screen=="beam" and PalmPilots.BeamScreen.count(self) or 0
     local visible=self.screen=="todo" and 7
+        or self.screen=="chess" and self.chessView=="lobby" and 5
         or self.screen=="beam" and PalmPilots.BeamScreen.visible(self) or 8
     self.scroll=math.max(1,math.min(math.max(1,count-visible+1),(self.scroll or 1)+delta))
 end

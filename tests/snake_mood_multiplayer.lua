@@ -25,7 +25,9 @@ local player={
 PalmPilots={
     Constants={ITEM_TYPE="PalmPilots.PalmPilot",MODULE="PalmPilots"},
     Network={SYNC="SyncDevice",SNAKE_MOOD="SnakeMood",CHESS_MOOD="ChessMood",LIST_TARGETS="ListTargets",
-        REQUEST="BeamRequest",LOCAL_REQUEST="LocalBeamRequest",RESPOND="BeamRespond"},
+        REQUEST="BeamRequest",LOCAL_REQUEST="LocalBeamRequest",RESPOND="BeamRespond",
+        CHESS_TARGETS_REQUEST="ChessTargetsRequest",CHESS_INVITE="ChessInvite",
+        CHESS_REPLY="ChessReply",CHESS_MOVE="ChessMove",CHESS_LEAVE="ChessLeave"},
     Utils={
         now=function() return realMs end,
         worldTimeMs=function() return worldMs end,
@@ -34,8 +36,10 @@ PalmPilots={
     },
     Data={get=function() return {deviceID="device-101"} end},
     BeamServer={},
+    ChessServer={},
 }
 package.loaded["PalmPilots/PalmPilotBeamServer"]=true
+package.loaded["PalmPilots/PalmPilotChessServer"]=true
 Events={OnClientCommand={Add=function(callback) Events.callback=callback end}}
 CharacterStat={BOREDOM="boredom",UNHAPPINESS="unhappiness"}
 SyncPlayerStatsPacket={getBitMaskForStat=function(stat)

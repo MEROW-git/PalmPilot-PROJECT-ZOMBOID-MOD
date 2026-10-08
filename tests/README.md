@@ -7,6 +7,8 @@ Run from the repository root:
 ```powershell
 npx.cmd --yes --package fengari-node-cli fengari tests/chess.lua
 npx.cmd --yes --package fengari-node-cli fengari tests/chess_multiplayer_sync.lua
+npx.cmd --yes --package fengari-node-cli fengari tests/chess_live_multiplayer.lua
+npx.cmd --yes --package fengari-node-cli fengari tests/chess_live_client.lua
 ```
 
 This checks opening move counts through three plies, castling, en passant,
@@ -21,12 +23,21 @@ older save migration.
 The second command checks that the real client sync command sends Chess data
 through the server save handler, that the server preserves the position and
 captured pieces, and that its rate limit and device identity check work.
+The live-match checks cover target distance, an equipped device in the second
+hand, invitations, both colors, turn order, illegal moves, capture sync,
+range exit, client offer handling, and keeping the solo save separate.
 In game, open Chess, select a piece, make a move, watch the computer think and
 move, then close and reopen the same PalmPilot to confirm the position is
 preserved. Test with a multiplayer client as well. With nonzero Boredom and
 Unhappiness, compare stats before and after active play; the multiplayer
 server should apply the change. Check that relief stops after inactivity,
 leaving Chess, or closing the device.
+For a live two-player check, host a game with two ordinary players. Equip a
+powered PalmPilot on each, enable Beam, stand within three tiles on the same
+floor, and open Chess > Multiplayer. Confirm both boards update after White
+and Black move, then step out of range and check that both matches end. Also
+try declining an invitation and switching floors. Restart both clients and
+the server after installing the same mod files.
 
 ## Spawn setting checks
 

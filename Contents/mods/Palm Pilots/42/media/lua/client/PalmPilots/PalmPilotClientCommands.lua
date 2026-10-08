@@ -157,6 +157,35 @@ function Client.requestBeam(ui,targetID,kind,entryID)
     sendClientCommand(ui.player,PalmPilots.Constants.MODULE,N.REQUEST,{itemID=ui.item:getID(),targetOnlineID=targetID,sourceDeviceID=ui.data.deviceID,kind=kind,entryID=entryID})
 end
 
+function Client.listChessTargets(ui)
+    ui.chessTargets={}
+    ui.chessTargetsLoading=isClient()
+    ui.scroll=1
+    if isClient() then
+        sendClientCommand(ui.player,PalmPilots.Constants.MODULE,N.CHESS_TARGETS_REQUEST,
+            {itemID=ui.itemID,deviceID=ui.deviceID})
+    else ui.chessTargetsLoading=false end
+end
+
+function Client.inviteChess(ui,targetID)
+    if not isClient() then return end
+    ui.chessInvitePending=true
+    sendClientCommand(ui.player,PalmPilots.Constants.MODULE,N.CHESS_INVITE,
+        {itemID=ui.itemID,deviceID=ui.deviceID,targetOnlineID=targetID})
+end
+
+function Client.moveChess(ui,sessionID,move)
+    if not isClient() then return end
+    sendClientCommand(ui.player,PalmPilots.Constants.MODULE,N.CHESS_MOVE,
+        {sessionID=sessionID,from=move.from,to=move.to,promotion=move.promotion})
+end
+
+function Client.leaveChess(ui,sessionID)
+    if not isClient() then return end
+    sendClientCommand(ui.player,PalmPilots.Constants.MODULE,N.CHESS_LEAVE,
+        {sessionID=sessionID})
+end
+
 local function findLocalDevice(deviceID,preferredPlayer)
     local players={}
     if preferredPlayer then table.insert(players,preferredPlayer) end
@@ -195,6 +224,25 @@ local function offerAnswer(_,button,requestID,deviceID)
     sendClientCommand(player,PalmPilots.Constants.MODULE,N.RESPOND,{requestID=requestID,accept=button.internal=="YES",receiverDeviceID=deviceID})
 end
 
+local function heldChessDevice(player)
+    for index=1,2 do
+        local item=index==1 and player:getPrimaryHandItem() or player:getSecondaryHandItem()
+        if item and item:getFullType()==PalmPilots.Constants.ITEM_TYPE
+                and item:getCurrentUsesFloat()>0 then
+            local data=PalmPilots.Data.get(item)
+            if data.beamEnabled and data.batteryLevel>0 then return item,data end
+        end
+    end
+end
+
+local function chessOfferAnswer(_,button,requestID)
+    local player=getSpecificPlayer(button.player or 0) or getPlayer()
+    local item,data=heldChessDevice(player)
+    sendClientCommand(player,PalmPilots.Constants.MODULE,N.CHESS_REPLY,
+        {requestID=requestID,accept=button.internal=="YES" and item~=nil,
+            itemID=item and item:getID(),deviceID=data and data.deviceID})
+end
+
 function Client.onServerCommand(module,command,args)
     if module~=PalmPilots.Constants.MODULE then return end
     args=type(args)=="table" and args or {}
@@ -205,6 +253,49 @@ function Client.onServerCommand(module,command,args)
             waiting.beamTargets=args.targets or {}
             waiting.beamTargetsLoading=false
             Client.waitingUIs[tostring(args.recipientOnlineID)]=nil
+        end
+    elseif command==N.CHESS_TARGETS then
+        local open=recipient and PalmPilots.MainUI
+            and PalmPilots.MainUI.instances[recipient:getPlayerNum()]
+        if open and open.screen=="chess" then
+            open.chessTargets=args.targets or {}
+            open.chessTargetsLoading=false
+        end
+    elseif command==N.CHESS_OFFER then
+        if not recipient then return end
+        local item=heldChessDevice(recipient)
+        if not item then
+            sendClientCommand(recipient,PalmPilots.Constants.MODULE,N.CHESS_REPLY,
+                {requestID=args.requestID,accept=false})
+            return
+        end
+        PalmPilots.Dialogs.confirm(getText("UI_PalmPilots_ChessOffer",args.senderName),
+            nil,chessOfferAnswer,args.requestID,nil,recipient:getPlayerNum())
+    elseif command==N.CHESS_STATE then
+        if not recipient then return end
+        local item=PalmPilots.Utils.findItemByID(recipient,args.itemID)
+        if not item or item:getFullType()~=PalmPilots.Constants.ITEM_TYPE
+                or PalmPilots.Data.get(item).deviceID~=args.deviceID then return end
+        local open=PalmPilots.MainUI and PalmPilots.MainUI.instances[recipient:getPlayerNum()]
+        if not open or open.itemID~=item:getID() then
+            PalmPilots.MainUI.open(recipient,item)
+            open=PalmPilots.MainUI.instances[recipient:getPlayerNum()]
+        end
+        if open then
+            if open.screen~="chess" then open:setScreen("chess") end
+            PalmPilots.ChessScreen.receiveState(open,args)
+        end
+    elseif command==N.CHESS_END then
+        local open=recipient and PalmPilots.MainUI
+            and PalmPilots.MainUI.instances[recipient:getPlayerNum()]
+        if open then
+            open.chessInvitePending=false
+            if args.sessionID and PalmPilots.ChessScreen.receiveEnd then
+                PalmPilots.ChessScreen.receiveEnd(open,args)
+            end
+        end
+        if args.key and recipient then
+            PalmPilots.Dialogs.message(getText(args.key),recipient:getPlayerNum())
         end
     elseif command==N.OFFER then
         if not recipient then return end

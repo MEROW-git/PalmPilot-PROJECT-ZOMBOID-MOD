@@ -13,6 +13,7 @@ local MAX_MOOD_ELAPSED_MS = 30000
 local BOREDOM_RELIEF_PER_HOUR,UNHAPPINESS_RELIEF_PER_HOUR = 12,6
 
 local function game(ui)
+    if ui.chess and ui.chess.multiplayer then return ui.chess end
     if not ui.chess or ui.chess.fen~=ui.data.chessFEN then
         local state=Chess.fromFEN(ui.data.chessFEN) or Chess.new()
         ui.chess={state=state,status=Chess.status(state),fen=ui.data.chessFEN,
@@ -33,11 +34,57 @@ end
 function S.leave(ui)
     local session=ui.chess
     if not session then return end
+    if session.multiplayer then
+        PalmPilots.Client.leaveChess(ui,session.sessionID)
+        ui.chess=nil
+    end
     stopMood(session)
     session.animation=nil
     session.thinkStart=nil
     session.selected=nil
     session.legalTargets=nil
+end
+
+function S.receiveState(ui,args)
+    local state=Chess.fromFEN(args.fen)
+    if not state or args.color~="w" and args.color~="b" then return end
+    local previous=ui.chess
+    if previous and previous.multiplayer and previous.sessionID==args.sessionID
+            and (previous.revision or 0)>=(tonumber(args.revision) or 0) then return end
+    local session=previous and previous.multiplayer and previous.sessionID==args.sessionID
+        and previous or {multiplayer=true,sessionID=args.sessionID}
+    session.state=state
+    session.fen=args.fen
+    session.status=Chess.status(state)
+    session.color=args.color
+    session.opponent=args.opponent
+    session.revision=tonumber(args.revision) or 0
+    session.capturedWhite=args.capturedWhite or {}
+    session.capturedBlack=args.capturedBlack or {}
+    session.lastMove=args.lastMove and {from=args.lastMove.from,to=args.lastMove.to,
+        special=args.lastMove.special,at=U.now()} or nil
+    session.selected=nil
+    session.legalTargets=nil
+    session.promotion=nil
+    session.thinkStart=nil
+    session.animation=nil
+    ui.chess=session
+    ui.chessView="board"
+    ui.chessInvitePending=false
+end
+
+function S.receiveEnd(ui,args)
+    local session=ui.chess
+    if session and session.multiplayer and session.sessionID==args.sessionID then
+        stopMood(session)
+        ui.chess=nil
+        ui.chessView="menu"
+    end
+end
+
+local function backToMenu(ui)
+    S.leave(ui)
+    ui.chessView="menu"
 end
 
 local function activePlay(session)
@@ -120,9 +167,11 @@ local function commit(ui,state,move)
 end
 
 function S.tick(ui)
+    if ui.chessView~="board" then return end
     local session=game(ui)
     local now=U.now()
     updateMood(ui,session,now)
+    if session.multiplayer then return end
     if session.state.turn~="b" or session.status~="playing"
             and session.status~="check" then return end
     if session.animation then
@@ -141,9 +190,10 @@ end
 local function chooseSquare(ui,square)
     local session=game(ui)
     local state=session.state
-    if state.turn~="w" or session.promotion then return end
+    local color=session.multiplayer and session.color or "w"
+    if state.turn~=color or session.promotion then return end
     local piece=state.board[square]
-    if piece and piece==string.upper(piece) then
+    if piece and (piece==string.upper(piece))==(color=="w") then
         if session.selected==square then
             session.selected=nil
             session.legalTargets=nil
@@ -165,7 +215,10 @@ local function chooseSquare(ui,square)
         session.promotion={from=session.selected,to=square}
         return
     end
-    commit(ui,Chess.apply(state,move),move)
+    if session.multiplayer then
+        session.selected=nil; session.legalTargets=nil
+        PalmPilots.Client.moveChess(ui,session.sessionID,move)
+    else commit(ui,Chess.apply(state,move),move) end
 end
 
 local function drawPiece(ui,piece,x,y)
@@ -198,14 +251,72 @@ local function drawCaptured(ui,pieces,x)
 end
 
 function S.render(ui)
+    ui:title(getText("UI_PalmPilots_Chess"))
+    if ui.chessView~="board" then
+        if ui.chessView=="lobby" then
+            ui:centerText(getText("UI_PalmPilots_ChessNearby"),360,190,UIFont.Medium)
+            local targets=ui.chessTargets or {}
+            if ui.chessTargetsLoading then
+                ui:centerText(getText("UI_PalmPilots_ChessSearching"),360,255,UIFont.Small)
+            elseif #targets==0 then
+                ui:centerText(getText("UI_PalmPilots_ChessNoPlayers"),360,255,UIFont.Small)
+            end
+            local first=math.max(1,math.min(math.max(1,#targets-4),ui.scroll or 1))
+            ui.scroll=first
+            for row=0,4 do
+                local target=targets[first+row]
+                if not target then break end
+                ui:button(ui:fitText(target.name,390,UIFont.Small),165,
+                    230+row*57,390,42,function()
+                    PalmPilots.Client.inviteChess(ui,target.onlineID)
+                end)
+            end
+            ui:scrollBar(#targets,first,5)
+            if ui.chessInvitePending then
+                ui:centerText(getText("UI_PalmPilots_ChessWaiting"),360,515,UIFont.Small)
+            end
+            ui:button(getText("UI_PalmPilots_ChessRefresh"),204,CONTROLS_Y,145,
+                CONTROLS_HEIGHT,function() PalmPilots.Client.listChessTargets(ui) end)
+            ui:button(getText("UI_PalmPilots_Back"),379,CONTROLS_Y,145,
+                CONTROLS_HEIGHT,function() ui.chessView="menu" end)
+        else
+            ui:centerText(getText("UI_PalmPilots_ChessMenuHint"),360,205,UIFont.Small)
+            ui:button(getText("UI_PalmPilots_ChessContinue"),220,275,280,48,function()
+                ui.chessView="board"; game(ui)
+            end)
+            ui:button(getText("UI_PalmPilots_ChessNew"),220,340,280,48,function()
+                ui.chess=nil; commit(ui,Chess.new()); ui.chessView="board"
+            end)
+            ui:button(getText("UI_PalmPilots_ChessMultiplayer"),220,405,280,48,function()
+                if not isClient() then
+                    PalmPilots.Dialogs.message(getText("UI_PalmPilots_ChessMPOnly"),ui.playerNum)
+                    return
+                end
+                ui.chessView="lobby"
+                PalmPilots.Client.listChessTargets(ui)
+            end)
+            ui:button(getText("UI_PalmPilots_Back"),220,CONTROLS_Y,280,
+                CONTROLS_HEIGHT,function() ui:setScreen("home") end)
+        end
+        return
+    end
     local session=game(ui)
     local state=session.state
     local now=U.now()
     if session.lastMove and now-session.lastMove.at>LAST_MOVE_MS then session.lastMove=nil end
-    ui:title(getText("UI_PalmPilots_Chess"))
     local status=session.status
     local label
     if session.promotion then label=getText("UI_PalmPilots_ChessPromote")
+    elseif session.multiplayer then
+        if status=="checkmate" then
+            label=getText(state.turn==session.color and "UI_PalmPilots_ChessMPLost"
+                or "UI_PalmPilots_ChessMPWon")
+        elseif status=="stalemate" or status=="draw50" then
+            label=getText("UI_PalmPilots_ChessDraw")
+        elseif state.turn==session.color then
+            label=getText(status=="check" and "UI_PalmPilots_ChessCheck"
+                or "UI_PalmPilots_ChessYourMove")
+        else label=getText("UI_PalmPilots_ChessOpponentTurn") end
     elseif status=="checkmate" then
         label=state.turn=="w" and getText("UI_PalmPilots_ChessLost") or getText("UI_PalmPilots_ChessWon")
     elseif status=="stalemate" or status=="draw50" then
@@ -221,8 +332,10 @@ function S.render(ui)
     local statusY=120+(48-getTextManager():getFontHeight(UIFont.Small)/ui.scale)/2
     ui:rightText(ui:fitText(label,320,UIFont.Small),596,statusY,UIFont.Small)
 
-    drawCaptured(ui,ui.data.chessCapturedWhite,119)
-    drawCaptured(ui,ui.data.chessCapturedBlack,543)
+    drawCaptured(ui,session.multiplayer and session.capturedWhite
+        or ui.data.chessCapturedWhite,119)
+    drawCaptured(ui,session.multiplayer and session.capturedBlack
+        or ui.data.chessCapturedBlack,543)
 
     local moving=session.animation and session.animation.move or nil
     local movingCapture
@@ -283,16 +396,24 @@ function S.render(ui)
             ui:button(string.upper(choice),204+(i-1)*84,CONTROLS_Y,66,CONTROLS_HEIGHT,function()
                 local pending=session.promotion
                 local move=pending and Chess.findMove(state,pending.from,pending.to,choice)
-                if move then activePlay(session); commit(ui,Chess.apply(state,move),move) end
+                if move then
+                    activePlay(session)
+                    if session.multiplayer then
+                        session.promotion=nil
+                        PalmPilots.Client.moveChess(ui,session.sessionID,move)
+                    else commit(ui,Chess.apply(state,move),move) end
+                end
             end)
         end
     else
-        ui:button(getText("UI_PalmPilots_ChessNew"),204,CONTROLS_Y,145,CONTROLS_HEIGHT,function()
-            stopMood(session)
-            commit(ui,Chess.new())
-        end)
+        if not session.multiplayer then
+            ui:button(getText("UI_PalmPilots_ChessNew"),204,CONTROLS_Y,145,CONTROLS_HEIGHT,function()
+                stopMood(session)
+                commit(ui,Chess.new())
+            end)
+        end
         ui:button(getText("UI_PalmPilots_Back"),379,CONTROLS_Y,145,CONTROLS_HEIGHT,function()
-            ui:setScreen("home")
+            backToMenu(ui)
         end)
     end
 end

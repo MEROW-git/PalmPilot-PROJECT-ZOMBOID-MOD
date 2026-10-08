@@ -32,6 +32,8 @@ Events={
 }
 PalmPilots.BeamServer={}
 package.loaded["PalmPilots/PalmPilotBeamServer"]=true
+PalmPilots.ChessServer={}
+package.loaded["PalmPilots/PalmPilotChessServer"]=true
 package.loaded["PalmPilots/PalmPilotDialogs"]=true
 dofile(root.."server/PalmPilots/PalmPilotServerCommands.lua")
 dofile(root.."client/PalmPilots/PalmPilotClientCommands.lua")

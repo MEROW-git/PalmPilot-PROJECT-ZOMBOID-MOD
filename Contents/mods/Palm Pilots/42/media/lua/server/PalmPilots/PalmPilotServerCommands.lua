@@ -1,4 +1,5 @@
 require "PalmPilots/PalmPilotBeamServer"
+require "PalmPilots/PalmPilotChessServer"
 
 PalmPilots.ServerCommands = PalmPilots.ServerCommands or {}
 local Server=PalmPilots.ServerCommands
@@ -14,6 +15,11 @@ local commandIntervals={
     [N.REQUEST]=500,
     [N.LOCAL_REQUEST]=250,
     [N.RESPOND]=250,
+    [N.CHESS_TARGETS_REQUEST]=500,
+    [N.CHESS_INVITE]=500,
+    [N.CHESS_REPLY]=250,
+    [N.CHESS_MOVE]=100,
+    [N.CHESS_LEAVE]=250,
 }
 
 local function allowCommand(player,command)
@@ -118,7 +124,12 @@ function Server.onClientCommand(module,command,player,args)
     elseif command==N.LIST_TARGETS then PalmPilots.BeamServer.listTargets(player)
     elseif command==N.REQUEST then PalmPilots.BeamServer.request(player,args)
     elseif command==N.LOCAL_REQUEST then PalmPilots.BeamServer.localRequest(player,args)
-    elseif command==N.RESPOND then PalmPilots.BeamServer.respond(player,args) end
+    elseif command==N.RESPOND then PalmPilots.BeamServer.respond(player,args)
+    elseif command==N.CHESS_TARGETS_REQUEST then PalmPilots.ChessServer.listTargets(player,args)
+    elseif command==N.CHESS_INVITE then PalmPilots.ChessServer.invite(player,args)
+    elseif command==N.CHESS_REPLY then PalmPilots.ChessServer.reply(player,args)
+    elseif command==N.CHESS_MOVE then PalmPilots.ChessServer.move(player,args)
+    elseif command==N.CHESS_LEAVE then PalmPilots.ChessServer.leave(player,args) end
 end
 
 Events.OnClientCommand.Add(Server.onClientCommand)

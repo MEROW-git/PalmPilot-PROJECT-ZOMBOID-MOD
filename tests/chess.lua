@@ -110,7 +110,8 @@ end
 PalmPilots.Constants.MODULE="PalmPilots"
 PalmPilots.Network={CHESS_MOOD="ChessMood"}
 dofile("Contents/mods/Palm Pilots/42/media/lua/client/PalmPilots/PalmPilotChessScreen.lua")
-local ui={data={chessFEN=C.toFEN(C.new())},buttons={},saves=0,scale=1}
+local ui={data={chessFEN=C.toFEN(C.new())},buttons={},saves=0,scale=1,
+    chessView="menu"}
 ui.player={getStats=function() return {remove=function(_,stat,amount)
     mood[stat]=math.max(0,mood[stat]-amount)
 end} end}
@@ -134,6 +135,24 @@ end
 ui.rightText=function(self,value,x,y) self.statusText={value=value,x=x,y=y} end
 ui.fitText=function(self,value) return value end
 ui.save=function(self) self.saves=self.saves+1 end
+ui.scrollBar=function() end
+ui.buttons={}
+PalmPilots.ChessScreen.render(ui)
+assert(#ui.buttons==4,"Chess entry menu has Continue, New game, Multiplayer, and Back")
+assert(ui.buttons[1].label=="UI_PalmPilots_ChessContinue","continue is the first option")
+ui.chessView="lobby"
+ui.chessTargets={}
+for index=1,6 do ui.chessTargets[index]={name="Player "..index,onlineID=index} end
+ui.scroll=2
+ui.buttons={}
+PalmPilots.ChessScreen.render(ui)
+assert(ui.buttons[1].label=="Player 2" and #ui.buttons==7,
+    "nearby Chess list scrolls beyond five players")
+ui.chessView="menu"
+ui.buttons={}
+PalmPilots.ChessScreen.render(ui)
+ui.buttons[1].callback()
+equal(ui.chessView,"board","Continue opens the saved solo board")
 local function renderAndCheck(expectedStatus)
     ui.buttons={}
     ui.statusText=nil
@@ -317,4 +336,29 @@ assert(ui.chess.animation,"computer resumes after a fresh delay")
 realMs=realMs+520
 PalmPilots.ChessScreen.tick(ui)
 equal(ui.chess.state.turn,"w","saved game completes delayed computer turn")
+local soloFEN=ui.data.chessFEN
+local sentMove,closedMatch
+PalmPilots.Client={
+    moveChess=function(_,sessionID,move) sentMove={sessionID=sessionID,move=move} end,
+    leaveChess=function(_,sessionID) closedMatch=sessionID end,
+}
+clientMode=true
+local multiplayerPosition=play(C.new(),"e2","e4")
+PalmPilots.ChessScreen.receiveState(ui,{sessionID="match-1",color="b",
+    fen=C.toFEN(multiplayerPosition),revision=1,capturedWhite={},capturedBlack={}})
+equal(ui.chessView,"board","incoming match opens Chess board")
+renderAndCheck("UI_PalmPilots_ChessYourMove")
+clickSquare("e7")
+clickSquare("e5")
+assert(sentMove and sentMove.sessionID=="match-1"
+    and sentMove.move.from==sq("e7") and sentMove.move.to==sq("e5"),
+    "Black move is sent to server")
+equal(ui.data.chessFEN,soloFEN,"live match leaves solo save untouched")
+PalmPilots.ChessScreen.receiveEnd(ui,{sessionID="match-1"})
+equal(ui.chessView,"menu","ended match returns to Chess menu")
+assert(ui.chess==nil,"ended match clears live board")
+PalmPilots.ChessScreen.receiveState(ui,{sessionID="match-2",color="w",
+    fen=C.toFEN(C.new()),revision=0,capturedWhite={},capturedBlack={}})
+PalmPilots.ChessScreen.leave(ui)
+equal(closedMatch,"match-2","leaving an active match notifies server")
 print("Chess rules: all checks passed")
