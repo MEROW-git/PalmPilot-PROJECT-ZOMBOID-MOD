@@ -6,6 +6,7 @@ Run from the repository root:
 
 ```powershell
 npx.cmd --yes --package fengari-node-cli fengari tests/chess.lua
+npx.cmd --yes --package fengari-node-cli fengari tests/chess_multiplayer_sync.lua
 ```
 
 This checks opening move counts through three plies, castling, en passant,
@@ -17,6 +18,9 @@ single-player mood relief, client heartbeats, and the Chess screen's
 move/save/reload flow, title-bar status, and control bounds. It covers capture
 tracking for both colors, en passant in both directions, new game reset, and
 older save migration.
+The second command checks that the real client sync command sends Chess data
+through the server save handler, that the server preserves the position and
+captured pieces, and that its rate limit and device identity check work.
 In game, open Chess, select a piece, make a move, watch the computer think and
 move, then close and reopen the same PalmPilot to confirm the position is
 preserved. Test with a multiplayer client as well. With nonzero Boredom and
